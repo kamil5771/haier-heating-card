@@ -1,0 +1,12 @@
+{
+  "name": "haier-heating-card",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/haier-heating-card.js --bundle --minify --format=esm --outfile=dist/haier-heating-card.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  }
+}
