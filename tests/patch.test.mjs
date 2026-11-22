@@ -15,6 +15,8 @@ class FakeNode {
     this.childNodes=[];for(const c of children)this.appendChild(c);
     this.nodeValue=type===3?name:null;
   }
+  get parentNode(){return this.parent;}
+  hasAttribute(k){return k in this._attrs;}
   get attributes(){return Object.entries(this._attrs).map(([name,value])=>({name,localName:name,namespaceURI:null,value}));}
   getAttribute(k){return this._attrs[k]??null;}
   getAttributeNS(ns,k){return this.getAttribute(k);}
@@ -40,4 +42,19 @@ test('patch updates values without replacing SVG or spinning rotor',()=>{
   assert.equal(svg.firstChild,rotor);
   assert.equal(svg.childNodes[1],value);
   assert.equal(value.firstChild.nodeValue,'23');
+});
+test('flow layer can appear and disappear without replacing neighboring rotor',()=>{
+  const rotor=new FakeNode('g',{'transform':'translate(10 10)'},[new FakeNode('circle',{r:'4'})]);
+  const base=new FakeNode('path',{d:'M0 0H10'});
+  const svg=new FakeNode('svg',{},[base,rotor]);
+  const root=new FakeNode('fragment',{},[svg],11);
+  const flow=new FakeNode('path',{d:'M0 0H10','class':'hf-flow'});
+  const next=new FakeNode('fragment',{},[new FakeNode('svg',{},[base.cloneNode(true),flow,rotor.cloneNode(true)])],11);
+  Card.patchNode(root,next);
+  assert.equal(svg.childNodes[2],rotor);
+  assert.equal(svg.childNodes.length,3);
+  const without=new FakeNode('fragment',{},[new FakeNode('svg',{},[base.cloneNode(true),rotor.cloneNode(true)])],11);
+  Card.patchNode(root,without);
+  assert.equal(svg.childNodes[1],rotor);
+  assert.equal(svg.childNodes.length,2);
 });

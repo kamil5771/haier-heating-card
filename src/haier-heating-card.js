@@ -1,4 +1,4 @@
-// Haier Heating Card v0.4.1: original user SVG retained in renderOriginal().
+// Haier Heating Card v0.4.3: original user SVG retained in renderOriginal().
 const ENTITY_KEYS = ["electric", "thermal", "cop", "north", "south", "groundRoom", "upperRoom", "groundThermostat", "upperThermostat", "status", "program", "controlPc", "mode", "control", "ambient", "defrost", "fan", "compressor", "discharge", "suction", "expansion", "tho", "thi", "supply", "supplyTarget", "return", "delta", "cwu", "cwuHaier", "cwuTarget", "hysteresis", "cwuHeater", "circulation", "bufferTop", "bufferMiddle", "bufferBottom", "bufferCharge", "groundTemp", "groundTarget", "groundValve", "groundPump", "upperTemp", "upperTarget", "upperValve", "upperPump", "heatingReturn", "limit", "cooling", "heater"];
 const DEFAULTS = Object.fromEntries(ENTITY_KEYS.map(key => [key, '']));
 class HaierHeatingCard extends HTMLElement {
@@ -20,7 +20,7 @@ class HaierHeatingCard extends HTMLElement {
     this.render();
   }
   getCardSize() { return 12; }
-  getGridOptions() { return { columns:'full', rows:'auto' }; }
+  getGridOptions() { return { columns: 6, min_columns: 3, max_columns: 12, rows: 'auto' }; }
   connectedCallback() {
     this._onResize = () => this.fit();
     window.addEventListener('resize', this._onResize, {passive:true});
@@ -33,12 +33,16 @@ class HaierHeatingCard extends HTMLElement {
   }
   fit() {
     const wrap = this.shadowRoot?.querySelector('.hf-wrap');
-    if (!wrap || !this.config?.fit_height) return;
+    if (!wrap) return;
+    if (!this.config?.fit_height) { this.style.removeProperty('--haier-card-width'); return; }
     const viewport = window.visualViewport;
     const vh = viewport?.height || window.innerHeight;
     const top = wrap.getBoundingClientRect().top - (viewport?.offsetTop || 0);
     const height = Math.max(1, vh - Math.max(0,top) - 16);
-    wrap.style.maxWidth = `${Math.min(640,height*1000/1500)}px`;
+    const width = `${Math.min(640, height * 1000 / 1500)}px`;
+    if (this.style.getPropertyValue('--haier-card-width') !== width) {
+      this.style.setProperty('--haier-card-width', width);
+    }
   }
   bindEvents() {
     let pressed = null, x = 0, y = 0, started = 0;
@@ -57,7 +61,12 @@ class HaierHeatingCard extends HTMLElement {
       if (el.dataset.heatSwitch) {
         const id=el.dataset.heatSwitch;
         if (!['on','off'].includes(this._hass?.states[id]?.state)) return;
-        this._hass.callService('switch','toggle',{entity_id:id}).catch(err=>console.error('Haier Heating Card:',err));
+        this._hass.callService('switch','toggle',{entity_id:id}).catch(err => {
+          this.dispatchEvent(new CustomEvent('hass-notification', {
+            bubbles: true, composed: true,
+            detail: { message: err?.message || 'Nie udało się zmienić stanu.' }
+          }));
+        });
       } else {
         if (!el.dataset.heatEntity) return;
         this.dispatchEvent(new CustomEvent('hass-more-info',{bubbles:true,composed:true,detail:{entityId:el.dataset.heatEntity}}));
@@ -73,7 +82,8 @@ class HaierHeatingCard extends HTMLElement {
     if (id) return `${tag}#${id}`;
     const entity = node.getAttribute('data-heat-entity') || node.getAttribute('data-heat-switch');
     if (entity) return `${tag}@${entity}`;
-    if (tag === 'path') return `${tag}:${node.getAttribute('d') || ''}`;
+    if (tag === 'path') return `${tag}:${node.getAttribute('d') || ''}:${node.getAttribute('class')?.includes('hf-flow') ? 'flow' : 'base'}`;
+    if (tag === 'g' && node.hasAttribute('transform')) return `${tag}:${node.getAttribute('transform')}`;
     if (tag === 'stop') return `${tag}:${node.getAttribute('offset') || ''}`;
     return '';
   }
@@ -106,43 +116,29 @@ class HaierHeatingCard extends HTMLElement {
     }
     }
     const desired = Array.from(newNode.childNodes);
-    let cursor = oldNode.firstChild;
-    for (let i = 0; i < desired.length; i++) {
-      const next = desired[i];
-      if (!cursor) {
-        oldNode.appendChild(next.cloneNode(true));
-        continue;
-      }
-      if (HaierHeatingCard.compatible(cursor, next)) {
-        const current = cursor;
-        cursor = cursor.nextSibling;
-        HaierHeatingCard.patchNode(current, next);
-        continue;
-      }
-      // Optional flow paths / SMIL elements appear and disappear as devices start.
-      // Search a few adjacent siblings to preserve existing animated elements.
-      let match = cursor.nextSibling;
-      let steps = 0;
-      while (match && steps++ < 5 && !HaierHeatingCard.compatible(match, next)) {
-        match = match.nextSibling;
+    const existing = Array.from(oldNode.childNodes);
+    const used = new Set();
+    let insertionPoint = oldNode.firstChild;
+    for (const next of desired) {
+      let match = null;
+      if (insertionPoint && !used.has(insertionPoint) && HaierHeatingCard.compatible(insertionPoint, next)) {
+        match = insertionPoint;
+      } else {
+        match = existing.find(candidate => !used.has(candidate) && HaierHeatingCard.compatible(candidate, next)) || null;
       }
       if (match) {
-        while (cursor !== match) {
-          const remove = cursor;
-          cursor = cursor.nextSibling;
-          remove.remove();
-        }
-        const current = cursor;
-        cursor = cursor.nextSibling;
-        HaierHeatingCard.patchNode(current, next);
+        used.add(match);
+        if (match !== insertionPoint) oldNode.insertBefore(match, insertionPoint);
+        HaierHeatingCard.patchNode(match, next);
+        insertionPoint = match.nextSibling;
       } else {
-        oldNode.insertBefore(next.cloneNode(true), cursor);
+        const created = next.cloneNode(true);
+        oldNode.insertBefore(created, insertionPoint);
+        insertionPoint = created.nextSibling;
       }
     }
-    while (cursor) {
-      const remove = cursor;
-      cursor = cursor.nextSibling;
-      remove.remove();
+    for (const previous of existing) {
+      if (!used.has(previous) && previous.parentNode === oldNode) previous.remove();
     }
   }
   render() {
@@ -157,7 +153,7 @@ class HaierHeatingCard extends HTMLElement {
     }
     const html = this.renderOriginal();
     if (!this._mounted || this._showingSetup) {
-      this.shadowRoot.innerHTML = html;
+      this.shadowRoot.innerHTML = `<style>:host{display:block;box-sizing:border-box;max-width:100%;width:var(--haier-card-width,auto);margin:0 auto} .hf-wrap{width:100%;max-width:100%} </style>` + html;
       this._mounted = true;
       this._showingSetup = false;
       if (!this._eventsBound) { this.bindEvents(); this._eventsBound = true; }
@@ -165,7 +161,7 @@ class HaierHeatingCard extends HTMLElement {
       return;
     }
     const template = document.createElement('template');
-    template.innerHTML = html;
+    template.innerHTML = `<style>:host{display:block;box-sizing:border-box;max-width:100%;width:var(--haier-card-width,auto);margin:0 auto} .hf-wrap{width:100%;max-width:100%} </style>` + html;
     // The outer SVG is retained. Only changing readings, colors and active
     // animation layers are patched in place.
     HaierHeatingCard.patchNode(this.shadowRoot, template.content);
@@ -491,7 +487,7 @@ class HaierHeatingCard extends HTMLElement {
   const zone = (
     name, y, tempId, targetId, valveId, pumpId
   ) => ![tempId,targetId,valveId,pumpId].some(id => id && states[id]) && this.config.missing_entity_mode === 'hide' ? '' : `
-    ${pipe(`M620 ${y + 72}H752`, hot, on(pumpId), false, 11)}
+    ${hidden(pumpId) ? '' : pipe(`M620 ${y + 72}H752`, hot, on(pumpId), false, 11)}
     ${pump(pumpId, 685, y + 72, hot, 26)}
     <rect x="752" y="${y}" width="226" height="148" rx="23"
       fill="${url('panel')}" stroke="#829097" stroke-width="2"/>
@@ -502,11 +498,11 @@ class HaierHeatingCard extends HTMLElement {
       27, '#ff3554', 'end', 700, 99)}
     ${text(null, 772, y + 101, 'Zawór', 23, '#d7e0e4', 'start')}
     ${text(valveId, 958, y + 101, value(valveId, 0), 25, '#fff', 'end')}
-    <rect x="772" y="${y + 125}" width="186" height="10"
+    ${hidden(valveId) ? '' : `<rect x="772" y="${y + 125}" width="186" height="10"
       rx="5" fill="#303c42"/>
     <rect x="772" y="${y + 125}"
       width="${186 * percent(valveId) / 100}"
-      height="10" rx="5" fill="${hot}"/>
+      height="10" rx="5" fill="${hot}"/>`}
   `;
 
   const evap = `
@@ -541,7 +537,7 @@ class HaierHeatingCard extends HTMLElement {
       .hf-wrap {
         width:100%;
         max-width:640px;
-        max-width:min(640px, calc((100dvh - 100px) * 0.6666667));
+        max-width:100%;
         margin:0 auto;
         min-width:0;
       }

@@ -1,4 +1,4 @@
-# Haier Heating Card v0.4.1 (test version)
+# Haier Heating Card v0.4.3 (test version)
 
 Custom Home Assistant SVG dashboard card. The diagram geometry, gradients, pipes, controls and animation markup were transferred from the owner-provided `haier card.txt` without redesign.
 
@@ -27,6 +27,14 @@ Run `npm ci && npm test && npm run build`. Test the visual editor and all animat
 
 MIT.
 
-## v0.4.1 performance
+## v0.4.3 performance
 
 SVG nodes and running animations remain mounted when sensor values change. Only modified readings, fills, and state-dependent animation elements are updated.
+
+## v0.4.3 sizing
+
+The card host now follows the same calculated width as the SVG, with a maximum of 640px. In Sections dashboards, the default grid width is 6 columns rather than full width. The card still fits the available viewport height when `fit_height: true`.
+
+## v0.4.3
+
+Sizing, SVG patching, switch-error notifications and missing-entity behavior improved. Water levels intentionally remain as in the original YAML. Live tablet and HACS validation are still required.
