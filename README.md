@@ -1,4 +1,4 @@
-# Haier Heating Card v0.4.0 (test version)
+# Haier Heating Card v0.4.1 (test version)
 
 Custom Home Assistant SVG dashboard card. The diagram geometry, gradients, pipes, controls and animation markup were transferred from the owner-provided `haier card.txt` without redesign.
 
@@ -26,3 +26,7 @@ Run `npm ci && npm test && npm run build`. Test the visual editor and all animat
 ## License
 
 MIT.
+
+## v0.4.1 performance
+
+SVG nodes and running animations remain mounted when sensor values change. Only modified readings, fills, and state-dependent animation elements are updated.

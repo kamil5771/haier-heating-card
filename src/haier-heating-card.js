@@ -1,4 +1,4 @@
-// Haier Heating Card v0.4.0: original user SVG retained in renderOriginal().
+// Haier Heating Card v0.4.1: original user SVG retained in renderOriginal().
 const ENTITY_KEYS = ["electric", "thermal", "cop", "north", "south", "groundRoom", "upperRoom", "groundThermostat", "upperThermostat", "status", "program", "controlPc", "mode", "control", "ambient", "defrost", "fan", "compressor", "discharge", "suction", "expansion", "tho", "thi", "supply", "supplyTarget", "return", "delta", "cwu", "cwuHaier", "cwuTarget", "hysteresis", "cwuHeater", "circulation", "bufferTop", "bufferMiddle", "bufferBottom", "bufferCharge", "groundTemp", "groundTarget", "groundValve", "groundPump", "upperTemp", "upperTarget", "upperValve", "upperPump", "heatingReturn", "limit", "cooling", "heater"];
 const DEFAULTS = Object.fromEntries(ENTITY_KEYS.map(key => [key, '']));
 class HaierHeatingCard extends HTMLElement {
@@ -12,7 +12,13 @@ class HaierHeatingCard extends HTMLElement {
     if (!this.shadowRoot) this.attachShadow({mode:'open'});
     this.render();
   }
-  set hass(value) { this._hass = value; this.render(); }
+  set hass(value) {
+    const previous = this._hass;
+    this._hass = value;
+    if (!this.config) return;
+    if (previous && Object.values(this.entities).every(id => !id || previous.states[id] === value.states[id])) return;
+    this.render();
+  }
   getCardSize() { return 12; }
   getGridOptions() { return { columns:'full', rows:'auto' }; }
   connectedCallback() {
@@ -58,16 +64,111 @@ class HaierHeatingCard extends HTMLElement {
       }
     }, true);
   }
-  render() {
-    if (!this._hass || !this.shadowRoot || !this.config) return;
-    if (!Object.values(this.entities).some(id => id && this._hass.states[id])) {
-      this.shadowRoot.innerHTML = `<div style="padding:24px;border:1px solid var(--divider-color);border-radius:12px;color:var(--primary-text-color)">Haier Heating Card: wybierz encje w edytorze karty.</div>`;
+  // Update only the changed SVG nodes. Existing animated paths and rotors
+  // remain mounted, so their animation timelines do not restart on each sensor update.
+  static nodeKey(node) {
+    if (node.nodeType !== 1) return '';
+    const tag = node.localName;
+    const id = node.getAttribute('id');
+    if (id) return `${tag}#${id}`;
+    const entity = node.getAttribute('data-heat-entity') || node.getAttribute('data-heat-switch');
+    if (entity) return `${tag}@${entity}`;
+    if (tag === 'path') return `${tag}:${node.getAttribute('d') || ''}`;
+    if (tag === 'stop') return `${tag}:${node.getAttribute('offset') || ''}`;
+    return '';
+  }
+  static compatible(a, b) {
+    if (a.nodeType !== b.nodeType) return false;
+    if (a.nodeType !== 1) return true;
+    if (a.namespaceURI !== b.namespaceURI || a.localName !== b.localName) return false;
+    const ka = HaierHeatingCard.nodeKey(a), kb = HaierHeatingCard.nodeKey(b);
+    return (!ka && !kb) || (ka && ka === kb);
+  }
+  static patchNode(oldNode, newNode) {
+    if (!HaierHeatingCard.compatible(oldNode, newNode)) {
+      oldNode.replaceWith(newNode.cloneNode(true));
       return;
     }
-    const html=this.renderOriginal();
-    this.shadowRoot.innerHTML=html;
-    if (!this._eventsBound) { this.bindEvents(); this._eventsBound = true; }
-    requestAnimationFrame(()=>this.fit());
+    if (oldNode.nodeType === 3 || oldNode.nodeType === 8) {
+      if (oldNode.nodeValue !== newNode.nodeValue) oldNode.nodeValue = newNode.nodeValue;
+      return;
+    }
+    if (oldNode.nodeType === 1) {
+    for (const attr of Array.from(oldNode.attributes)) {
+      if (!newNode.hasAttributeNS(attr.namespaceURI, attr.localName)) {
+        oldNode.removeAttributeNS(attr.namespaceURI, attr.localName);
+      }
+    }
+    for (const attr of Array.from(newNode.attributes)) {
+      if (oldNode.getAttributeNS(attr.namespaceURI, attr.localName) !== attr.value) {
+        oldNode.setAttributeNS(attr.namespaceURI, attr.name, attr.value);
+      }
+    }
+    }
+    const desired = Array.from(newNode.childNodes);
+    let cursor = oldNode.firstChild;
+    for (let i = 0; i < desired.length; i++) {
+      const next = desired[i];
+      if (!cursor) {
+        oldNode.appendChild(next.cloneNode(true));
+        continue;
+      }
+      if (HaierHeatingCard.compatible(cursor, next)) {
+        const current = cursor;
+        cursor = cursor.nextSibling;
+        HaierHeatingCard.patchNode(current, next);
+        continue;
+      }
+      // Optional flow paths / SMIL elements appear and disappear as devices start.
+      // Search a few adjacent siblings to preserve existing animated elements.
+      let match = cursor.nextSibling;
+      let steps = 0;
+      while (match && steps++ < 5 && !HaierHeatingCard.compatible(match, next)) {
+        match = match.nextSibling;
+      }
+      if (match) {
+        while (cursor !== match) {
+          const remove = cursor;
+          cursor = cursor.nextSibling;
+          remove.remove();
+        }
+        const current = cursor;
+        cursor = cursor.nextSibling;
+        HaierHeatingCard.patchNode(current, next);
+      } else {
+        oldNode.insertBefore(next.cloneNode(true), cursor);
+      }
+    }
+    while (cursor) {
+      const remove = cursor;
+      cursor = cursor.nextSibling;
+      remove.remove();
+    }
+  }
+  render() {
+    if (!this._hass || !this.shadowRoot || !this.config) return;
+    const configured = Object.values(this.entities).some(id => id && this._hass.states[id]);
+    if (!configured) {
+      if (!this._showingSetup) {
+        this.shadowRoot.innerHTML = `<div style="padding:24px;border:1px solid var(--divider-color);border-radius:12px;color:var(--primary-text-color)">Haier Heating Card: wybierz encje w edytorze karty.</div>`;
+        this._showingSetup = true;
+      }
+      return;
+    }
+    const html = this.renderOriginal();
+    if (!this._mounted || this._showingSetup) {
+      this.shadowRoot.innerHTML = html;
+      this._mounted = true;
+      this._showingSetup = false;
+      if (!this._eventsBound) { this.bindEvents(); this._eventsBound = true; }
+      requestAnimationFrame(() => this.fit());
+      return;
+    }
+    const template = document.createElement('template');
+    template.innerHTML = html;
+    // The outer SVG is retained. Only changing readings, colors and active
+    // animation layers are patched in place.
+    HaierHeatingCard.patchNode(this.shadowRoot, template.content);
   }
   renderOriginal() {
     const states=this._hass.states;
