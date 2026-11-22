@@ -1,4 +1,4 @@
-// Haier Heating Card v0.4.4: original user SVG retained in renderOriginal().
+// Haier Heating Card v0.4.5: original user SVG retained in renderOriginal().
 const ENTITY_KEYS = ["electric", "thermal", "cop", "north", "south", "groundRoom", "upperRoom", "groundThermostat", "upperThermostat", "status", "program", "controlPc", "mode", "control", "ambient", "defrost", "fan", "compressor", "discharge", "suction", "expansion", "tho", "thi", "supply", "supplyTarget", "return", "delta", "cwu", "cwuHaier", "cwuTarget", "hysteresis", "cwuHeater", "circulation", "bufferTop", "bufferMiddle", "bufferBottom", "bufferCharge", "groundTemp", "groundTarget", "groundValve", "groundPump", "upperTemp", "upperTarget", "upperValve", "upperPump", "heatingReturn", "limit", "cooling", "heater"];
 const DEFAULTS = Object.fromEntries(ENTITY_KEYS.map(key => [key, '']));
 class HaierHeatingCard extends HTMLElement {
@@ -6,7 +6,7 @@ class HaierHeatingCard extends HTMLElement {
   static getStubConfig() { return { type: 'custom:haier-heating-card' }; }
   setConfig(config) {
     if (!config) throw new Error('Brak konfiguracji');
-    this.config = { fit_height: true, missing_entity_mode: 'hide', pump_threshold_w: 30, ...config };
+    this.config = { fit_height: true, missing_entity_mode: 'hide', pump_threshold_w: 30, max_width: 640, height_reserve: 170, ...config };
     if (!['hide','dash','zero'].includes(this.config.missing_entity_mode)) throw new Error('Nieprawidłowy tryb brakujących encji');
     this.entities = { ...DEFAULTS, ...(config.entities || {}) };
     if (!this.shadowRoot) this.attachShadow({mode:'open'});
@@ -20,7 +20,7 @@ class HaierHeatingCard extends HTMLElement {
     this.render();
   }
   getCardSize() { return 12; }
-  getGridOptions() { return { columns: 6, min_columns: 3, max_columns: 12, rows: 'auto' }; }
+  getGridOptions() { return { columns: 12, min_columns: 6, max_columns: 12, rows: 'auto' }; }
   connectedCallback() { /* Sizing is CSS-only; scrolling never changes card dimensions. */ }
   disconnectedCallback() {}
   fit() { /* Intentionally no-op: viewport-based CSS is stable on scroll. */ }
@@ -131,11 +131,15 @@ class HaierHeatingCard extends HTMLElement {
       }
       return;
     }
+    const maxWidth = Math.max(150, Math.min(1200, Number(this.config.max_width) || 640));
+    const reserve = Math.max(0, Math.min(600, Number(this.config.height_reserve) ?? 170));
+    this.style.setProperty('--haier-max-width', `${maxWidth}px`);
+    this.style.setProperty('--haier-height-reserve', `${reserve}px`);
     if (this.config.fit_height !== false) this.setAttribute('data-fit-height', '');
     else this.removeAttribute('data-fit-height');
     const html = this.renderOriginal();
     if (!this._mounted || this._showingSetup) {
-      this.shadowRoot.innerHTML = `<style>:host{display:block;box-sizing:border-box;max-width:100%;width:100%;margin:0 auto} .hf-wrap{width:100%;max-width:640px;margin:0 auto} :host([data-fit-height]) .hf-wrap{max-width:min(640px,calc((100dvh - 170px) * 2 / 3))} </style>` + html;
+      this.shadowRoot.innerHTML = `<style>:host{display:block;box-sizing:border-box;min-width:0;width:100%;max-width:100%} .hf-wrap{width:100%;max-width:var(--haier-max-width,640px);margin:0 auto} :host([data-fit-height]) .hf-wrap{max-width:min(var(--haier-max-width,640px),max(150px,calc((100dvh - var(--haier-height-reserve,170px)) * 2 / 3)))} </style>` + html;
       this._mounted = true;
       this._showingSetup = false;
       if (!this._eventsBound) { this.bindEvents(); this._eventsBound = true; }
@@ -143,7 +147,7 @@ class HaierHeatingCard extends HTMLElement {
       return;
     }
     const template = document.createElement('template');
-    template.innerHTML = `<style>:host{display:block;box-sizing:border-box;max-width:100%;width:100%;margin:0 auto} .hf-wrap{width:100%;max-width:640px;margin:0 auto} :host([data-fit-height]) .hf-wrap{max-width:min(640px,calc((100dvh - 170px) * 2 / 3))} </style>` + html;
+    template.innerHTML = `<style>:host{display:block;box-sizing:border-box;min-width:0;width:100%;max-width:100%} .hf-wrap{width:100%;max-width:var(--haier-max-width,640px);margin:0 auto} :host([data-fit-height]) .hf-wrap{max-width:min(var(--haier-max-width,640px),max(150px,calc((100dvh - var(--haier-height-reserve,170px)) * 2 / 3)))} </style>` + html;
     // The outer SVG is retained. Only changing readings, colors and active
     // animation layers are patched in place.
     HaierHeatingCard.patchNode(this.shadowRoot, template.content);
