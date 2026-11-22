@@ -71,3 +71,20 @@ entities:
 - Both tanks are shown physically full. CO charge percentage remains a separate energy reading.
 
 The visual editor includes the missing-entity selector. This is an initial HACS candidate, not yet validated against a live Home Assistant instance.
+
+## Visual entity mapping (v0.3.0)
+
+In the Lovelace card editor, expand any of the six groups: Pompa ciepła, Dom i pogoda, CWU, Bufor CO, Parter, Piętro. Each field has a Home Assistant entity picker, initially populated with the original installation's entity. Select any other entity to override the mapping, or use × to disable that field. All mappings are stored under `entities:`.
+
+Example:
+
+```yaml
+type: custom:haier-heating-card
+missing_entity_mode: hide
+entities:
+  fan: sensor.my_heat_pump_fan_speed
+  cwu: sensor.my_tank_temperature
+  upperPump: ''
+```
+
+This version restores the missing wind and heating/cooling control symbols to the initial plugin layout. The supplied full original button-card artwork remains the reference for further visual parity work. Test in a real HA dashboard before publishing a stable release.
