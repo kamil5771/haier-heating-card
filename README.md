@@ -15,7 +15,7 @@ Animated Home Assistant dashboard card for a Haier heat-pump installation, inclu
 type: custom:haier-heating-card
 ```
 
-The defaults match the original Franciszkow/Haier installation. Any entity can be overridden:
+
 
 ```yaml
 type: custom:haier-heating-card
