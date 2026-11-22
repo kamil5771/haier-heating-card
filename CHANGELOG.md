@@ -1,10 +1,9 @@
 # Changelog
 
-## 0.4.5 (test)
-- Fix card rendered at half the section width: use 12 of 12 section grid columns by default.
-- Keep the original SVG, colors, paths and animations unchanged.
-- Stable CSS sizing; optional `max_width` (default 640) and `height_reserve` (default 170).
-- No scroll-position measurement.
+## 0.4.6 (testing)
+- Added width and viewport-height reserve sliders to the visual editor.
+- Both settings persist in card YAML (`max_width`, `height_reserve`).
+- Preserved original SVG and v0.4.5 animation behavior.
 
-## 0.4.4
-- Replaced scroll-position sizing with CSS.
+## 0.4.5
+- Stable CSS sizing and section width correction.

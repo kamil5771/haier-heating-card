@@ -1,4 +1,4 @@
-// Haier Heating Card v0.4.5: original user SVG retained in renderOriginal().
+// Haier Heating Card v0.4.6: original user SVG retained in renderOriginal().
 const ENTITY_KEYS = ["electric", "thermal", "cop", "north", "south", "groundRoom", "upperRoom", "groundThermostat", "upperThermostat", "status", "program", "controlPc", "mode", "control", "ambient", "defrost", "fan", "compressor", "discharge", "suction", "expansion", "tho", "thi", "supply", "supplyTarget", "return", "delta", "cwu", "cwuHaier", "cwuTarget", "hysteresis", "cwuHeater", "circulation", "bufferTop", "bufferMiddle", "bufferBottom", "bufferCharge", "groundTemp", "groundTarget", "groundValve", "groundPump", "upperTemp", "upperTarget", "upperValve", "upperPump", "heatingReturn", "limit", "cooling", "heater"];
 const DEFAULTS = Object.fromEntries(ENTITY_KEYS.map(key => [key, '']));
 class HaierHeatingCard extends HTMLElement {
@@ -870,8 +870,26 @@ class HaierHeatingCardEditor extends HTMLElement {
     if (!this.config) return;
     this._initialized = true;
     const options = Object.entries(ENTITY_GROUPS).map(([group, keys]) => `<details><summary>${group} (${keys.length})</summary><div class="fields">${keys.map(key => `<label class="field"><span>${LABELS[key] || key}</span><ha-entity-picker data-key="${key}" allow-custom-entity></ha-entity-picker><button type="button" class="clear" data-clear="${key}" title="Wyłącz mapowanie">×</button></label>`).join('')}</div></details>`).join('');
-    this.innerHTML = `<style>:host{display:block;color:var(--primary-text-color)}.editor{padding:12px 16px;max-height:70vh;overflow:auto}.row{display:flex;align-items:center;gap:12px;margin:12px 0}.row label{flex:1}select,input[type=number]{background:var(--card-background-color);color:var(--primary-text-color);border:1px solid var(--divider-color);border-radius:6px;padding:8px}.fields{display:grid;gap:8px;padding:10px 0}.field{display:grid;grid-template-columns:minmax(100px,1fr) minmax(0,1.5fr) 30px;align-items:center;gap:8px;font-size:13px}.field ha-entity-picker{min-width:0}.clear{border:0;background:transparent;color:var(--secondary-text-color);cursor:pointer;font-size:22px}details{border-bottom:1px solid var(--divider-color);padding:10px 0}summary{cursor:pointer;font-weight:600}small{color:var(--secondary-text-color)}</style><div class="editor"><b>Haier Heating Card</b><div class="row"><label><input id="fit" type="checkbox"> Dopasuj do wysokości ekranu</label></div><div class="row"><label>Brak encji</label><select id="missing"><option value="hide">Ukryj element</option><option value="dash">Pokaż —</option><option value="zero">Pokaż 0</option></select></div><div class="row"><label>Próg pompy Haier (W)</label><input id="threshold" type="number" min="0" max="100000" step="1"></div><p><small>Wybierz encje z Home Assistant. Nowa instalacja nie ma przypisanych encji. Przycisk × wyłącza dane mapowanie; możesz wybrać inną encję w każdej pozycji.</small></p>${options}</div>`;
+    this.innerHTML = `<style>:host{display:block;color:var(--primary-text-color)}.editor{padding:12px 16px;max-height:70vh;overflow:auto}.row{display:flex;align-items:center;gap:12px;margin:12px 0}.row label{flex:1}select,input[type=number]{background:var(--card-background-color);color:var(--primary-text-color);border:1px solid var(--divider-color);border-radius:6px;padding:8px}.fields{display:grid;gap:8px;padding:10px 0}.field{display:grid;grid-template-columns:minmax(100px,1fr) minmax(0,1.5fr) 30px;align-items:center;gap:8px;font-size:13px}.field ha-entity-picker{min-width:0}.clear{border:0;background:transparent;color:var(--secondary-text-color);cursor:pointer;font-size:22px}details{border-bottom:1px solid var(--divider-color);padding:10px 0}summary{cursor:pointer;font-weight:600}small{color:var(--secondary-text-color)}</style><div class="editor"><b>Haier Heating Card</b><div class="row"><label><input id="fit" type="checkbox"> Dopasuj do wysokości ekranu</label></div><div class="row"><label>Szerokość maksymalna: <output id="width-value"></output> px</label><input id="width-slider" type="range" min="150" max="1200" step="10" style="width:45%"></div><div class="row"><label>Rezerwa wysokości: <output id="reserve-value"></output> px</label><input id="reserve-slider" type="range" min="0" max="500" step="10" style="width:45%"></div><div class="row"><label>Brak encji</label><select id="missing"><option value="hide">Ukryj element</option><option value="dash">Pokaż —</option><option value="zero">Pokaż 0</option></select></div><div class="row"><label>Próg pompy Haier (W)</label><input id="threshold" type="number" min="0" max="100000" step="1"></div><p><small>Wybierz encje z Home Assistant. Nowa instalacja nie ma przypisanych encji. Przycisk × wyłącza dane mapowanie; możesz wybrać inną encję w każdej pozycji.</small></p>${options}</div>`;
     this.querySelector('#fit').checked = this.config.fit_height !== false;
+    const widthSlider = this.querySelector('#width-slider');
+    const reserveSlider = this.querySelector('#reserve-slider');
+    widthSlider.value = Math.max(150, Math.min(1200, Number(this.config.max_width) || 640));
+    reserveSlider.value = Math.max(0, Math.min(500, Number(this.config.height_reserve ?? 170)));
+    this.querySelector('#width-value').textContent = widthSlider.value;
+    this.querySelector('#reserve-value').textContent = reserveSlider.value;
+    for (const [slider, output, key] of [
+      [widthSlider, '#width-value', 'max_width'],
+      [reserveSlider, '#reserve-value', 'height_reserve']
+    ]) {
+      slider.addEventListener('input', e => {
+        this.querySelector(output).textContent = e.target.value;
+      });
+      slider.addEventListener('change', e => {
+        this.config[key] = Number(e.target.value);
+        this.emit();
+      });
+    }
     this.querySelector('#missing').value = this.config.missing_entity_mode || 'hide';
     this.querySelector('#threshold').value = this.config.pump_threshold_w ?? 30;
     this.querySelector('#fit').addEventListener('change', e => { this.config.fit_height = e.target.checked; this.emit(); });
