@@ -1,4 +1,4 @@
-// Haier Heating Card v0.4.3: original user SVG retained in renderOriginal().
+// Haier Heating Card v0.4.4: original user SVG retained in renderOriginal().
 const ENTITY_KEYS = ["electric", "thermal", "cop", "north", "south", "groundRoom", "upperRoom", "groundThermostat", "upperThermostat", "status", "program", "controlPc", "mode", "control", "ambient", "defrost", "fan", "compressor", "discharge", "suction", "expansion", "tho", "thi", "supply", "supplyTarget", "return", "delta", "cwu", "cwuHaier", "cwuTarget", "hysteresis", "cwuHeater", "circulation", "bufferTop", "bufferMiddle", "bufferBottom", "bufferCharge", "groundTemp", "groundTarget", "groundValve", "groundPump", "upperTemp", "upperTarget", "upperValve", "upperPump", "heatingReturn", "limit", "cooling", "heater"];
 const DEFAULTS = Object.fromEntries(ENTITY_KEYS.map(key => [key, '']));
 class HaierHeatingCard extends HTMLElement {
@@ -21,29 +21,9 @@ class HaierHeatingCard extends HTMLElement {
   }
   getCardSize() { return 12; }
   getGridOptions() { return { columns: 6, min_columns: 3, max_columns: 12, rows: 'auto' }; }
-  connectedCallback() {
-    this._onResize = () => this.fit();
-    window.addEventListener('resize', this._onResize, {passive:true});
-    window.visualViewport?.addEventListener('resize', this._onResize, {passive:true});
-    this.fit();
-  }
-  disconnectedCallback() {
-    window.removeEventListener('resize', this._onResize);
-    window.visualViewport?.removeEventListener('resize', this._onResize);
-  }
-  fit() {
-    const wrap = this.shadowRoot?.querySelector('.hf-wrap');
-    if (!wrap) return;
-    if (!this.config?.fit_height) { this.style.removeProperty('--haier-card-width'); return; }
-    const viewport = window.visualViewport;
-    const vh = viewport?.height || window.innerHeight;
-    const top = wrap.getBoundingClientRect().top - (viewport?.offsetTop || 0);
-    const height = Math.max(1, vh - Math.max(0,top) - 16);
-    const width = `${Math.min(640, height * 1000 / 1500)}px`;
-    if (this.style.getPropertyValue('--haier-card-width') !== width) {
-      this.style.setProperty('--haier-card-width', width);
-    }
-  }
+  connectedCallback() { /* Sizing is CSS-only; scrolling never changes card dimensions. */ }
+  disconnectedCallback() {}
+  fit() { /* Intentionally no-op: viewport-based CSS is stable on scroll. */ }
   bindEvents() {
     let pressed = null, x = 0, y = 0, started = 0;
     const root = this.shadowRoot;
@@ -151,9 +131,11 @@ class HaierHeatingCard extends HTMLElement {
       }
       return;
     }
+    if (this.config.fit_height !== false) this.setAttribute('data-fit-height', '');
+    else this.removeAttribute('data-fit-height');
     const html = this.renderOriginal();
     if (!this._mounted || this._showingSetup) {
-      this.shadowRoot.innerHTML = `<style>:host{display:block;box-sizing:border-box;max-width:100%;width:var(--haier-card-width,auto);margin:0 auto} .hf-wrap{width:100%;max-width:100%} </style>` + html;
+      this.shadowRoot.innerHTML = `<style>:host{display:block;box-sizing:border-box;max-width:100%;width:100%;margin:0 auto} .hf-wrap{width:100%;max-width:640px;margin:0 auto} :host([data-fit-height]) .hf-wrap{max-width:min(640px,calc((100dvh - 170px) * 2 / 3))} </style>` + html;
       this._mounted = true;
       this._showingSetup = false;
       if (!this._eventsBound) { this.bindEvents(); this._eventsBound = true; }
@@ -161,7 +143,7 @@ class HaierHeatingCard extends HTMLElement {
       return;
     }
     const template = document.createElement('template');
-    template.innerHTML = `<style>:host{display:block;box-sizing:border-box;max-width:100%;width:var(--haier-card-width,auto);margin:0 auto} .hf-wrap{width:100%;max-width:100%} </style>` + html;
+    template.innerHTML = `<style>:host{display:block;box-sizing:border-box;max-width:100%;width:100%;margin:0 auto} .hf-wrap{width:100%;max-width:640px;margin:0 auto} :host([data-fit-height]) .hf-wrap{max-width:min(640px,calc((100dvh - 170px) * 2 / 3))} </style>` + html;
     // The outer SVG is retained. Only changing readings, colors and active
     // animation layers are patched in place.
     HaierHeatingCard.patchNode(this.shadowRoot, template.content);

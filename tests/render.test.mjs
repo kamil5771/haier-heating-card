@@ -5,6 +5,8 @@ import vm from 'node:vm';
 const code=readFileSync('dist/haier-heating-card.js','utf8');
 const registry=new Map();
 class Element {
+  setAttribute(){}
+  removeAttribute(){}
   attachShadow(){ this.shadowRoot={innerHTML:'',querySelector:()=>null,addEventListener:()=>{}};return this.shadowRoot; }
   dispatchEvent(){}
 }
