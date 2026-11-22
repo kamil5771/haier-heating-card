@@ -20,15 +20,8 @@ The defaults match the original Franciszkow/Haier installation. Any entity can b
 ```yaml
 type: custom:haier-heating-card
 fit_height: true
+missing_entity_mode: hide
 pump_threshold_w: 30
-entities:
-  electric: sensor.haier_licznik_power
-  compressor: sensor.haier_czestotliwosc_sprezarki
-  fan: sensor.haier_predkosc_wentylatora_1_diag
-  cwu: sensor.franciszkow_czujnik_cwu_temperatura
-  bufferTop: sensor.franciszkow_czujnik_co_temperatura
-  bufferMiddle: sensor.franciszkow_czujnik_dodatkowy_1_temperatura
-  bufferBottom: sensor.franciszkow_czujnik_dodatkowy_2_temperatura
 ```
 
 ## Features
