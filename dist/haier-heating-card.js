@@ -1,13 +1,13 @@
-// Haier Heating Card v0.4.7
+// Haier Heating Card v0.4.8
 const GROUPS = {
- 'Pompa ciepła': 'electric thermal cop status program controlPc mode control fan compressor suction discharge ambient defrost expansion tho thi supply supplyTarget return delta limit cooling heater',
+ 'Pompa ciepła': 'electric thermal cop status program controlPc mode control energyDaily heatDaily fan compressor suction discharge ambient defrost expansion tho thi supply supplyTarget return delta limit cooling heater',
  'Dom i pogoda': 'north south groundRoom upperRoom groundThermostat upperThermostat',
  'CWU': 'cwu cwuHaier cwuTarget hysteresis cwuHeater circulation',
  'Bufor CO': 'bufferTop bufferMiddle bufferBottom bufferCharge heatingReturn',
  'Parter': 'groundTemp groundTarget groundValve groundPump',
  'Piętro': 'upperTemp upperTarget upperValve upperPump'
 };
-const LABELS = {electric:'Moc elektryczna',thermal:'Moc cieplna',cop:'COP',status:'Status pompy',program:'Program',controlPc:'Sterowanie PC',mode:'Tryb',control:'Sterowanie',fan:'Obroty wentylatora',compressor:'Częstotliwość sprężarki',suction:'Temperatura ssania',discharge:'Temperatura tłoczenia',ambient:'Temperatura otoczenia',defrost:'Temperatura odszraniania',expansion:'Otwarcie zaworu rozprężnego',tho:'Wylot wymiennika THO',thi:'Wlot wymiennika THI',supply:'Temperatura CO odczytana',supplyTarget:'Temperatura CO zadana',return:'Powrót CO Haier',delta:'Różnica temperatur ΔT',limit:'Ograniczenie mocy',cooling:'Chłodzenie',heater:'Grzałka Haier',north:'Temperatura zewnętrzna N',south:'Temperatura zewnętrzna S',groundRoom:'Temperatura parteru',upperRoom:'Temperatura piętra',groundThermostat:'Termostat parteru',upperThermostat:'Termostat piętra',cwu:'Temperatura CWU',cwuHaier:'Temperatura CWU Haier',cwuTarget:'Zadana CWU',hysteresis:'Histereza CWU',cwuHeater:'Grzałka CWU',circulation:'Pompa cyrkulacyjna CWU',bufferTop:'Bufor góra',bufferMiddle:'Bufor środek',bufferBottom:'Bufor dół',bufferCharge:'Naładowanie bufora',heatingReturn:'Powrót do bufora',groundTemp:'Temperatura zaworu parter',groundTarget:'Zadana zaworu parter',groundValve:'Otwarcie zaworu parter',groundPump:'Pompa parter',upperTemp:'Temperatura zaworu piętro',upperTarget:'Zadana zaworu piętro',upperValve:'Otwarcie zaworu piętro',upperPump:'Pompa piętro'};
+const LABELS = {electric:'Moc elektryczna',thermal:'Moc cieplna',cop:'COP',status:'Status pompy',program:'Program',controlPc:'Sterowanie PC',mode:'Tryb',control:'Sterowanie',energyDaily:'Pobrano (energia dobowa)',heatDaily:'Wytworzono (ciepło dobowe)',fan:'Obroty wentylatora',compressor:'Częstotliwość sprężarki',suction:'Temperatura ssania',discharge:'Temperatura tłoczenia',ambient:'Temperatura otoczenia',defrost:'Temperatura odszraniania',expansion:'Otwarcie zaworu rozprężnego',tho:'Wylot wymiennika THO',thi:'Wlot wymiennika THI',supply:'Temperatura CO odczytana',supplyTarget:'Temperatura CO zadana',return:'Powrót CO Haier',delta:'Różnica temperatur ΔT',limit:'Ograniczenie mocy',cooling:'Chłodzenie',heater:'Grzałka Haier',north:'Temperatura zewnętrzna N',south:'Temperatura zewnętrzna S',groundRoom:'Temperatura parteru',upperRoom:'Temperatura piętra',groundThermostat:'Termostat parteru',upperThermostat:'Termostat piętra',cwu:'Temperatura CWU',cwuHaier:'Temperatura CWU Haier',cwuTarget:'Zadana CWU',hysteresis:'Histereza CWU',cwuHeater:'Grzałka CWU',circulation:'Pompa cyrkulacyjna CWU',bufferTop:'Bufor góra',bufferMiddle:'Bufor środek',bufferBottom:'Bufor dół',bufferCharge:'Naładowanie bufora',heatingReturn:'Powrót do bufora',groundTemp:'Temperatura zaworu parter',groundTarget:'Zadana zaworu parter',groundValve:'Otwarcie zaworu parter',groundPump:'Pompa parter',upperTemp:'Temperatura zaworu piętro',upperTarget:'Zadana zaworu piętro',upperValve:'Otwarcie zaworu piętro',upperPump:'Pompa piętro'};
 const KEYS = Object.values(GROUPS).flatMap(s=>s.split(' '));
 const DEFAULTS = {fit_height:true, missing_entity_mode:'hide', pump_threshold_w:30, max_width:640, height_reserve:170};
 const esc = v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -54,20 +54,37 @@ class HaierHeatingCard extends HTMLElement {
  }
  set hass(next){const previous=this._hass;this._hass=next;if(!this.config||!next)return;if(previous&&Object.values(this.entities).every(id=>!id||previous.states[id]===next.states[id]))return;this.render();}
  bindEvents(){
-  let pressed=null,x=0,y=0,started=0;
+  let pressed=null,x=0,y=0,started=0,timer=null,longFired=false;
   const root=this.shadowRoot;
-  root.addEventListener('pointerdown',e=>{if(e.button!==0)return;pressed=e.composedPath().find(el=>el?.dataset&&(el.dataset.heatEntity||el.dataset.heatSwitch));x=e.clientX;y=e.clientY;started=Date.now();},true);
+  const clear=()=>{if(timer!==null){clearTimeout(timer);timer=null;}};
+  const info=id=>{if(id)this.dispatchEvent(new CustomEvent('hass-more-info',{bubbles:true,composed:true,detail:{entityId:id}}));};
   const moved=e=>Math.abs(e.clientX-x)>10||Math.abs(e.clientY-y)>10;
-  root.addEventListener('pointermove',e=>{if(moved(e))pressed=null;},true);
-  root.addEventListener('pointercancel',()=>{pressed=null;},true);
+  root.addEventListener('pointerdown',e=>{
+   if(e.button!==undefined&&e.button!==0)return;
+   clear();pressed=e.composedPath().find(el=>el?.dataset&&(el.dataset.heatEntity||el.dataset.heatSwitch));
+   x=e.clientX;y=e.clientY;started=Date.now();longFired=false;
+   if(!pressed)return;
+   const id=pressed.dataset.heatEntity||pressed.dataset.heatSwitch;
+   timer=setTimeout(()=>{timer=null;if(!pressed)return;longFired=true;info(id);},500);
+  },true);
+  root.addEventListener('pointermove',e=>{if(moved(e)){clear();pressed=null;}},true);
+  root.addEventListener('pointercancel',()=>{clear();pressed=null;longFired=false;},true);
+  root.addEventListener('contextmenu',e=>{
+   if(e.composedPath().some(el=>el?.dataset&&(el.dataset.heatEntity||el.dataset.heatSwitch)))e.preventDefault();
+  },true);
   root.addEventListener('pointerup',async e=>{
-   const el=pressed;pressed=null;if(!el||moved(e)||Date.now()-started>800)return;
-   e.stopPropagation();const h=this._hass,id=el.dataset.heatSwitch;
-   if(id){if(!['on','off'].includes(h?.states[id]?.state))return;
-    try{await h.callService('switch','toggle',{entity_id:id});}catch(err){this.dispatchEvent(new CustomEvent('hass-notification',{bubbles:true,composed:true,detail:{message:err?.message||'Nie udało się zmienić stanu.'}}));}
-   }else this.dispatchEvent(new CustomEvent('hass-more-info',{bubbles:true,composed:true,detail:{entityId:el.dataset.heatEntity}}));
+   clear();const el=pressed;pressed=null;
+   if(!el||moved(e)||longFired)return;
+   e.stopPropagation();
+   const h=this._hass,id=el.dataset.heatSwitch;
+   if(id){
+    if(!['on','off'].includes(h?.states[id]?.state))return;
+    try{await h.callService('switch','toggle',{entity_id:id});}
+    catch(err){this.dispatchEvent(new CustomEvent('hass-notification',{bubbles:true,composed:true,detail:{message:err?.message||'Nie udało się zmienić stanu.'}}));}
+   }else info(el.dataset.heatEntity);
   },true);
  }
+
  render(){
   if(!this._hass||!this.config)return;
   const width=getWidth(this.config.max_width);
@@ -115,7 +132,7 @@ class HaierHeatingCard extends HTMLElement {
   const wind=(x,y,delay='')=>`<g transform="translate(${x} ${y})"><g class="${fan?'hf-wind':'hf-wind-still'}" style="${delay?`animation-delay:${delay};`:''}" fill="none" stroke="#b9c9d0" stroke-width="4" stroke-linecap="round"><path d="M-28 0H19C42 0 40 -27 22 -27C10 -27 7 -17 12 -11"/><path d="M-36 13H40C62 13 61 39 43 39C31 39 27 30 32 24"/><path d="M-22 26H11"/></g></g>`;
   function tank(x,width,name,fill,top,mid,bottom,isCwu=false){
    if(mode==='hide'&&[top,mid,bottom].every(missing))return '';
-   const cx=x+width/2,ix=x+14,iw=width-28,l=isCwu?92:pct(E.bufferCharge),s=1404-330*l/100;
+   const cx=x+width/2,ix=x+14,iw=width-28,l=isCwu?100:pct(E.bufferCharge),s=isCwu?1065:1404-330*l/100;
    return `${text(null,cx,1018,name,39,'#f0f3f4','middle',600)}<rect x="${x}" y="1050" width="${width}" height="375" rx="39" fill="${url('tankMetal')}" stroke="#d7dfe3" stroke-width="2"/><rect x="${x+7}" y="1057" width="${width-14}" height="361" rx="33" fill="#131b1f" stroke="#5d6b73" stroke-width="3"/><rect x="${ix}" y="1065" width="${iw}" height="339" rx="27" fill="#0b1519"/><g clip-path="${url(isCwu?'cwuClip':'bufferClip')}"><rect x="${ix}" y="${s}" width="${iw}" height="${1404-s}" fill="${url(fill)}"/>${l>0?`<ellipse cx="${cx}" cy="${s}" rx="${iw/2+4}" ry="12" fill="${isCwu?cwu:co[0]}" stroke="#f2ffff" stroke-opacity=".45" stroke-width="2"/><rect x="${ix}" y="${s}" width="${iw}" height="${1404-s}" fill="${url('liquidGloss')}"/>`:''}</g>${isCwu?`${text(top,cx,1150,temp(top),43)}${text(E.cwuTarget,cx,1238,temp(E.cwuTarget),31,'#ff244a')}${text(bottom,cx,1320,temp(bottom),43)}${text(E.hysteresis,cx,1382,num(E.hysteresis)==null?'± —':'± '+fmt(num(E.hysteresis))+'°C',27,'#ff244a')}`:`${text(top,cx,1146,temp(top),43)}${text(mid,cx,1234,temp(mid),43)}${text(bottom,cx,1322,temp(bottom),43)}${text(E.bufferCharge,cx,1382,val(E.bufferCharge,0),30)}`}`;
   }
   // Original panel geometry, labels and colors, with missing-entity handling.
@@ -140,7 +157,9 @@ class HaierHeatingCard extends HTMLElement {
   ${text(E.north,472,82,'N: '+temp(E.north),31)}${text(E.south,472,145,'S: '+temp(E.south),31)}
   <g transform="translate(648 101)" fill="none" stroke="#dce6eb" stroke-width="5" stroke-linejoin="round"><path d="M-28 5L0 -23L28 5V54H-28Z"/><path d="M-8 54V23H8V54"/></g>
   ${text(E.groundRoom,778,82,temp(E.groundRoom),32)}${text(E.groundThermostat,924,82,target(E.groundThermostat),31,'#ff3655')}${text(E.upperRoom,778,145,temp(E.upperRoom),32)}${text(E.upperThermostat,924,145,target(E.upperThermostat),31,'#ff3655')}
-  ${text(E.status,104,259,state(E.status),48,'#f4f7f8','middle',700,122)}<path d="M176 232V284" stroke="#64757e" stroke-width="1.5"/>${text(E.program,278,253,state(E.program),29,'#f4f7f8','middle',700,160)}${text(E.controlPc,278,282,state(E.controlPc),15,'#aebec7','middle',600,160)}${text(E.mode,951,243,state(E.mode),30,'#f4f7f8','end',700,280)}${text(E.control,951,280,state(E.control),23,'#c7d2d9','end',500,300)}
+  ${text(E.status,104,259,state(E.status),48,'#f4f7f8','middle',700,122)}<path d="M176 232V284" stroke="#64757e" stroke-width="1.5"/>${text(E.program,278,253,state(E.program),29,'#f4f7f8','middle',700,160)}${text(E.controlPc,278,282,state(E.controlPc),15,'#aebec7','middle',600,160)}${text(E.mode,951,243,state(E.mode),30,'#f4f7f8','end',700,280)}${text(E.control,951,280,state(E.control),23,'#c7d2d9','end',500,300)}<path d="M392 232V284M747 232V284" stroke="#64757e" stroke-width="1.5"/>
+  ${text(E.energyDaily,570,247,'Pobrano: '+val(E.energyDaily,2),22,'#f4f7f8','middle',600,340)}
+  ${text(E.heatDaily,570,281,'Wytworzono: '+val(E.heatDaily,2),22,'#f4f7f8','middle',600,340)}
   ${text(E.suction,373,365,temp(E.suction),32)}${text(E.discharge,633,365,temp(E.discharge),32)}
   <g transform="translate(497 440)"${entity(E.compressor)}><circle r="66" fill="${url('metal')}" stroke="#e4ebef" stroke-width="3"/><circle r="56" fill="none" stroke="#f5f8fa" stroke-opacity=".5" stroke-width="2"/><circle r="49" fill="#4a5963" stroke="#273c48" stroke-width="3"/><path d="M-18 -29H18V-6H-18Z" fill="none" stroke="#e4ecef" stroke-width="4"/><g>${running?motion('translate','0,-3;0,4;0,-3','.7s'):''}<rect x="-14" y="-22" width="28" height="9" fill="#dbe5ea"/><path d="M0 -13V24" stroke="#dbe5ea" stroke-width="4"/></g><circle cy="28" r="8" fill="none" stroke="#dbe5ea" stroke-width="4"/><circle r="73" fill="transparent"/></g>
   ${text(E.compressor,497,528,val(E.compressor,0),30)}${text(E.ambient,151,512,temp(E.ambient),32,'#f4f6f7','end')}${wind(195,506)}

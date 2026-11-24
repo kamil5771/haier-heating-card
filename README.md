@@ -1,4 +1,4 @@
-# Haier Heating Card v0.4.7
+# Haier Heating Card v0.4.8
 
 Animowany schemat instalacji grzewczej dla dashboardu Home Assistant. Karta nie wymaga `custom:button-card` i nie zawiera domyślnych identyfikatorów encji.
 
@@ -29,3 +29,15 @@ W edytorze wybierz encje z listy. Istniejące mapowania `entities:` zachowują t
 ## Licencja
 
 MIT.
+
+## Odczyty dobowe
+
+Dodatkowe encje można wybrać w edytorze karty lub przypisać w YAML:
+
+```yaml
+entities:
+  energyDaily: sensor.haier_energia_dobowo_2
+  heatDaily: sensor.haier_cieplo_dobowo
+```
+
+W górnym panelu wyświetlane są jako **Pobrano** i **Wytworzono**, z jednostką encji. Przytrzymanie odczytu lub ikony przez około 500 ms otwiera More Info.

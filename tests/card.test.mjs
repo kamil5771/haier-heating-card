@@ -10,7 +10,7 @@ class Host {
  attachShadow(){this.shadowRoot={innerHTML:'',addEventListener(){}};}
 }
 const src=readFileSync('dist/haier-heating-card.js','utf8');
-vm.runInNewContext(src,{HTMLElement:Host,customElements:{get:k=>registry.get(k),define:(k,v)=>registry.set(k,v)},window:{}});
+vm.runInNewContext(src,{HTMLElement:Host,customElements:{get:k=>registry.get(k),define:(k,v)=>registry.set(k,v)},window:{},setTimeout,clearTimeout,CustomEvent:class CustomEvent{constructor(type,options){this.type=type;this.detail=options.detail;}},document:{createElement:()=>({set innerHTML(v){this.content={childNodes:[]};}})}});
 const Card=registry.get('haier-heating-card');
 const make=(config={})=>{
  const c=new Card();c.setConfig({max_width:0,entities:{compressor:'sensor.comp',groundTemp:'sensor.ground',upperTemp:'sensor.upper',bufferTop:'sensor.top',cwu:'sensor.cwu',bufferCharge:'sensor.charge'},...config});
@@ -34,3 +34,29 @@ test('five rays and continuous condenser; evaporator follows leftward start',()=
  assert.match(s,/<path d="M431 440H385[^\"]+"[^>]*class="hf-flow"/);
 });
 test('public source has no private entity IDs or pasted chat markup',()=>assert.doesNotMatch(src,/franciszkow|sensor\.haier_|fai-ChatInputEntity/i));
+test('CWU visually full and two daily readings with separators',()=>{
+ const c=make({entities:{compressor:'sensor.comp',cwu:'sensor.cwu',bufferTop:'sensor.top',energyDaily:'sensor.energy',heatDaily:'sensor.heat'}});
+ c._hass={states:{'sensor.comp':{state:'42'},'sensor.cwu':{state:'41'},'sensor.top':{state:'33'},'sensor.energy':{state:'5.75',attributes:{unit_of_measurement:'kWh'}},'sensor.heat':{state:'17.2',attributes:{unit_of_measurement:'kWh'}}}};
+ c.shadowRoot.innerHTML=c.renderOriginal();
+ const s=c.shadowRoot.innerHTML;
+ assert.match(s,/x="54" y="1065" width="202" height="339"/);
+ assert.match(s,/Pobrano: 5,75 kWh/);
+ assert.match(s,/Wytworzono: 17,20 kWh/);
+ assert.match(s,/M392 232V284M747 232V284/);
+});
+test('long press opens more info without switch toggle',async()=>{
+ const c=make(); const listeners=new Map(),events=[],calls=[];
+ c.shadowRoot.addEventListener=(type,handler)=>listeners.set(type,handler);
+ c.dispatchEvent=e=>events.push(e);
+ c._hass.callService=async(...args)=>calls.push(args);
+ c.bindEvents();
+ const el={dataset:{heatSwitch:'switch.test'}};
+ c._hass.states['switch.test']={state:'off'};
+ const e={button:0,clientX:10,clientY:20,composedPath:()=>[el],stopPropagation(){}};
+ listeners.get('pointerdown')(e);
+ await new Promise(resolve=>setTimeout(resolve,530));
+ await listeners.get('pointerup')(e);
+ assert.equal(calls.length,0);
+ assert.equal(events.filter(e=>e.type==='hass-more-info').length,1);
+ assert.equal(events[0].detail.entityId,'switch.test');
+});
