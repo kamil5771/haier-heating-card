@@ -1,52 +1,31 @@
-# Haier Heating Card v0.4.6 (test version)
+# Haier Heating Card v0.4.7
 
-Custom Home Assistant SVG dashboard card. The diagram geometry, gradients, pipes, controls and animation markup were transferred from the owner-provided `haier card.txt` without redesign.
+Animowany schemat instalacji grzewczej dla dashboardu Home Assistant. Karta nie wymaga `custom:button-card` i nie zawiera domyślnych identyfikatorów encji.
 
-## Install
+## Instalacja / aktualizacja
 
-Add this public repository to HACS as **Dashboard**, install, reload Home Assistant, and add:
+W HACS dodaj repozytorium niestandardowe w kategorii **Dashboard**, zainstaluj kartę i przeładuj frontend. Po aktualizacji przez HACS pobierz nową wersję zasobu przed odświeżeniem przeglądarki.
 
 ```yaml
 type: custom:haier-heating-card
-missing_entity_mode: hide
 fit_height: true
-pump_threshold_w: 30
+max_width: 640
+height_reserve: 170
+missing_entity_mode: hide
 ```
 
-**No personal entity IDs are shipped as defaults.** Open the visual card editor to choose entities in six groups, or add an `entities:` mapping in YAML. See `examples/example.yaml`.
+W edytorze wybierz encje z listy. Istniejące mapowania `entities:` zachowują te same klucze.
 
-Missing entity modes: `hide`, `dash` (—), `zero` (0 placeholder). Existing `unavailable` entities display —.
+- `max_width`: limit w pikselach. `0` oznacza pełną dostępną szerokość przydzieloną przez dashboard. Karta nie deklaruje własnej liczby kolumn. Zapisane w dashboardzie ustawienia układu pozostają bez zmian.
+- `fit_height`: dodatkowy limit szerokości wynikający z wysokości okna, przy zachowaniu proporcji 2:3.
+- `height_reserve`: wysokość pozostawiona poza kartą przy dopasowaniu do ekranu.
+- `missing_entity_mode`: `hide`, `dash` lub `zero`; niedostępna encja nadal może wyświetlać kreskę.
+- `pump_threshold_w`: próg animacji pompy Haier (domyślnie 30 W).
 
-The original artwork is rendered through a native custom card, not `custom:button-card`.
+## Testy
 
-## Testing
+`npm test` uruchamia testy lokalne bez zależności. `npm run build` sprawdza składnię i kopiuje źródło do `dist/`.
 
-Run `npm ci && npm test && npm run build`. Test the visual editor and all animations in Home Assistant before creating a release.
-
-## License
+## Licencja
 
 MIT.
-
-## v0.4.6 performance
-
-SVG nodes and running animations remain mounted when sensor values change. Only modified readings, fills, and state-dependent animation elements are updated.
-
-## v0.4.6 sizing
-
-The card host now follows the same calculated width as the SVG, with a maximum of 640px. In Sections dashboards, the default grid width is 6 columns rather than full width. The card still fits the available viewport height when `fit_height: true`.
-
-## v0.4.6
-
-Sizing, SVG patching, switch-error notifications and missing-entity behavior improved. Water levels intentionally remain as in the original YAML. Live tablet and HACS validation are still required.
-
-## v0.4.6
-
-Stable CSS sizing. Card size does not change when scrolling. `fit_height: true` caps SVG height to viewport height minus 170px; `fit_height: false` uses up to 640px of available column width.
-
-## v0.4.6 layout
-
-The card uses the full width of its **assigned section column**, not the full dashboard. Its SVG is capped at 640px and optionally to available viewport height. Configure `max_width: 640` and `height_reserve: 170` if needed. The default Sections card width is 12/12 columns so it no longer renders at half width.
-
-## Manual sizing
-
-Use the visual editor sliders to set **maximum width** (150–1200 px) and **height reserve** (0–500 px), or set `max_width: 640` and `height_reserve: 170` in YAML. Uncheck **Dopasuj do wysokości ekranu** to disable height limiting. The SVG always keeps its 2:3 aspect ratio.

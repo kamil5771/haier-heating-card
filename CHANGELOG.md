@@ -1,9 +1,10 @@
 # Changelog
 
-## 0.4.6 (testing)
-- Added width and viewport-height reserve sliders to the visual editor.
-- Both settings persist in card YAML (`max_width`, `height_reserve`).
-- Preserved original SVG and v0.4.5 animation behavior.
+## 0.4.7
 
-## 0.4.5
-- Stable CSS sizing and section width correction.
+- User-controlled maximum width or full available width; no card-imposed column count.
+- Original floor panel layout and labels restored.
+- Leftward animation on the upper evaporator pipe.
+- Continuous rounded hot pipe across both condenser connections.
+- Five sun rays.
+- Tank level behavior retained.
