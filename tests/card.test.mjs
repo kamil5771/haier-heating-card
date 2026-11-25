@@ -60,16 +60,20 @@ test('long press opens more info without switch toggle',async()=>{
  assert.equal(events.filter(e=>e.type==='hass-more-info').length,1);
  assert.equal(events[0].detail.entityId,'switch.test');
 });
-test('all six coil joins match both water pipe endpoints',()=>{
+test('single continuous helical route: all front and rear joins, red to blue',()=>{
  const s=make().shadowRoot.innerHTML;
- for(const d of [
-  'M608 590 C590 590 589 606 608 612 C643 629 688 616 703 625 Q709 632 694 627',
-  'M608 590 C625 610 625 631 608 650',
-  'M608 650 C590 650 589 666 608 672 C643 689 688 676 703 685 Q709 692 694 687',
-  'M694 687 C664 692 636 706 608 710',
-  'M608 710 C590 710 589 726 608 732 C643 749 688 736 703 745 Q709 752 694 747',
-  'M694 747 C673 757 675 775 694 775',
-  'M694 627H960','M960 775H694'
- ])assert.ok(s.includes(d),d);
+ const expected=[
+ 'M694 627 C707 622 706 614 691 608 C660 595 637 601 608 590',
+ 'M608 590 C631 610 663 654 694 675',
+ 'M694 675 C707 670 706 662 691 658 C660 645 637 651 608 640',
+ 'M608 640 C631 660 663 704 694 725',
+ 'M694 725 C707 720 706 712 691 708 C660 695 637 701 608 690',
+ 'M608 690 C631 710 663 744 694 765',
+ 'M694 765 C707 760 706 752 691 748 C660 735 637 741 608 730',
+ 'M608 730 C633 755 662 776 694 775',
+ 'M694 627H960','M960 775H694'
+ ];
+ for(const d of expected)assert.ok(s.includes(d),d);
  assert.match(s,/gradientUnits="userSpaceOnUse" x1="651" y1="775" x2="651" y2="590"/);
+ assert.match(s,/data-condenser-front="true"/);assert.match(s,/data-condenser-back="true"/);
 });
