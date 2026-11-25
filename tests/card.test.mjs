@@ -67,10 +67,10 @@ test('one routed water circuit and three phase-aligned visible turns',()=>{
  const flows=layers.map(([, , paths])=>paths.match(/<path d="([^"]+)"[^>]*class="hf-flow hf-reverse"/)[1]);
  assert.equal(flows[0],flows[1]);
  assert.equal((flows[0].match(/M/g)||[]).length,1);
- assert.match(flows[0],/^M960 627 H722.*C596 769 634 775 674 775 H960$/);
+ assert.match(flows[0],/^M960 609 H722.*C596 746 640 757 676 757 H960$/);
  const clip=s.match(/<clipPath id="[^"]+-coilFrontClip"[^>]*>(.*?)<\/clipPath>/)[1];
- assert.deepEqual([...clip.matchAll(/x="607" y="(\d+)" width="88" height="(\d+)"/g)].map(([_,y,h])=>[Number(y),Number(h)]),[[644,22],[700,22],[756,29]]);
- assert.match(flows[0],/596 644 .*596 700 .*596 756 /);
+ assert.deepEqual([...clip.matchAll(/x="607" y="(\d+)" width="88" height="(\d+)"/g)].map(([_,y,h])=>[Number(y),Number(h)]),[[616,22],[672,22],[728,39]]);
+ assert.match(flows[0],/596 616 .*596 672 .*596 728 /);
  assert.ok(s.indexOf('data-condenser-back')<s.indexOf('data-condenser-body'));
  assert.ok(s.indexOf('data-condenser-body')<s.indexOf('data-condenser-front'));
 });

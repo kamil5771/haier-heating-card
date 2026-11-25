@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.5.11
+- Centered the supply and return pipes around the condenser midpoint and aligned their readings. Retained the cylinder and its vertical connections.
+
 ## 0.5.10
 - Increased coil spacing to 56 SVG units and made the lower turn join the fixed blue return as one straight line.
 
