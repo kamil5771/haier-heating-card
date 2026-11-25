@@ -1,8 +1,8 @@
 # Changelog
 
-## 0.5.0
-- Skraplacz: trzy ciągłe przednie zwoje i połączone z nimi tylne odcinki ukryte za walcem.
-- Brak urwanych końców owijki; tylne odcinki przechodzą za korpusem.
-- Prawidłowy gradient SVG w układzie współrzędnych skraplacza, czerwony u góry i niebieski na dole.
-- Połączenia do czerwonego zasilania i niebieskiego powrotu ukryte za walcem.
-- Pozostałe elementy bez zmian.
+## 0.5.2
+- Owijka jest jednym logicznym, ciągłym przewodem z trzema przednimi zwojami i trzema ukrytymi odcinkami.
+- Czerwona rura zasilania łączy się z pierwszym zwojem za korpusem, a niebieska rura powrotu z ostatnim.
+- Tylne przyłącza i odcinki owijki są rysowane przed nieprzezroczystym walcem, więc pozostają niewidoczne.
+- Brak wystających, niepołączonych końców; zachowany gradient niebieski-fioletowy-czerwony.
+- Reszta karty bez zmian.

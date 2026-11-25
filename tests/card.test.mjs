@@ -60,9 +60,16 @@ test('long press opens more info without switch toggle',async()=>{
  assert.equal(events.filter(e=>e.type==='hass-more-info').length,1);
  assert.equal(events[0].detail.entityId,'switch.test');
 });
-test('condenser coil endpoints join rear paths without open ends',()=>{
+test('all six coil joins match both water pipe endpoints',()=>{
  const s=make().shadowRoot.innerHTML;
- const ends=['M694 627 C680 616 633 591 602 590','M602 590 C590 598','700 620','M700 620 C722 629','602 650','M602 650 C590 658','700 680','M700 680 C722 689','602 710','M602 710 C590 718','700 740','M700 740 C719 746 720 762 694 775'];
- for(const e of ends)assert.ok(s.includes(e),e);
+ for(const d of [
+  'M608 590 C590 590 589 606 608 612 C643 629 688 616 703 625 Q709 632 694 627',
+  'M608 590 C625 610 625 631 608 650',
+  'M608 650 C590 650 589 666 608 672 C643 689 688 676 703 685 Q709 692 694 687',
+  'M694 687 C664 692 636 706 608 710',
+  'M608 710 C590 710 589 726 608 732 C643 749 688 736 703 745 Q709 752 694 747',
+  'M694 747 C673 757 675 775 694 775',
+  'M694 627H960','M960 775H694'
+ ])assert.ok(s.includes(d),d);
  assert.match(s,/gradientUnits="userSpaceOnUse" x1="651" y1="775" x2="651" y2="590"/);
 });
