@@ -1,4 +1,4 @@
-// Haier Heating Card v0.5.7
+// Haier Heating Card v0.5.9
 const GROUPS = {
  'Pompa ciepła': 'electric thermal cop status program controlPc mode control energyDaily heatDaily fan compressor suction discharge ambient defrost expansion tho thi supply supplyTarget return delta limit cooling heater',
  'Dom i pogoda': 'north south groundRoom upperRoom groundThermostat upperThermostat',
@@ -144,22 +144,21 @@ class HaierHeatingCard extends HTMLElement {
   // Refrigerant circuit connects to the cylinder, not to the external water coil.
   const refrigerantHot='M563 440H627 Q651 440 651 464 V540';
   const refrigerantOutlet='M651 826 V851 Q651 875 627 875 H535';
-  // Each 44-unit turn consists of one rear half-turn and one front half-turn.
-  // One continuous path preserves dash phase and keeps both pipe connections tangent.
-  const coilFront=[[649,671],[693,715],[737,759]];
+  // Keep 44-unit spacing and a continuous stroke between the fixed pipe ends.
+  // The final front pass keeps its slope until it eases into the blue return.
+  const coilFront=[[641,675],[685,719],[729,780]];
   const waterRoute=[
    'M960 627 H722 C710 627 704 629 695 630',
-   'C670 633 596 630 596 649',
-   'C596 658 624 660 651 662 C677 664 704 663 704 671',
-   'C704 680 675 682 651 684 C624 686 596 684 596 693',
-   'C596 702 624 704 651 706 C677 708 704 707 704 715',
-   'C704 724 675 726 651 728 C624 730 596 728 596 737',
-   'C596 746 624 748 651 750 C677 752 704 751 704 759',
-   'C704 770 717 775 737 775 H960'
+   'C670 633 596 625 596 641',
+   'C596 647 621 648 651 658 C681 668 704 669 704 675',
+   'C704 681 673 679 651 680 C629 681 596 679 596 685',
+   'C596 691 621 692 651 702 C681 712 704 713 704 719',
+   'C704 725 673 723 651 724 C629 725 596 723 596 729',
+   'C596 735 621 736 651 746 C681 756 718 775 752 775 H960'
   ].join(' ');
   const waterPipe=pipe(waterRoute,url('coilHeat'),hp,true,12);
   const gradient=(id,axis,stops,tag='linearGradient')=>`<${tag} id="${gid(id)}" ${axis}>${stops.map(([o,c,alpha])=>`<stop offset="${o}" stop-color="${c}"${alpha==null?'':` stop-opacity="${alpha}"`}/>`).join('')}</${tag}>`;
-  const defs=`${gradient('background','cx=".5" cy=".35" r=".8"',[[0,'#111a1f'],[.6,'#080e12'],[1,'#05090c']],'radialGradient')}${gradient('tankMetal','x1="0" x2="1"',[[0,'#6c7a83'],[.035,'#e4eaed'],[.08,'#f8fafb'],[.14,'#7c8b94'],[.48,'#3e4c55'],[.85,'#8e9da5'],[.94,'#e4eaed'],[1,'#5a6972']])}${gradient('metal','x1="0" x2="1"',[[0,'#77858e'],[.16,'#e6ebee'],[.45,'#a7b3bb'],[.72,'#657680'],[1,'#c5cfd5']])}${gradient('pumpMetal','x1="0" y1="0" x2="1" y2="1"',[[0,'#f3f6f7'],[.45,'#a2b0b8'],[1,'#475962']])}${gradient('control','',[[0,'#253239'],[.75,'#10191f'],[1,'#060b0e']],'radialGradient')}${gradient('panel','x1="0" y1="0" x2="1" y2="1"',[[0,'#182126'],[1,'#080e12']])}${gradient('blade','x1="0" y1="0" x2="1" y2="1"',[[0,'#d0d8dd'],[.45,'#82929d'],[1,'#354954']])}${gradient('cwuFill','x1="0" y1="0" x2="0" y2="1"',[[0,cwu],[1,cwu]])}${gradient('bufferFill','x1="0" y1="0" x2="0" y2="1"',[[0,co[0]],[.5,co[1]],[1,co[2]]])}${gradient('coilHeat','gradientUnits="userSpaceOnUse" x1="651" y1="775" x2="651" y2="627"',[[0,'#29bfea'],[.45,'#a544d4'],[1,'#f33756']])}${gradient('liquidGloss','x1="0" x2="1"',[[0,'#fff',.18],[.18,'#fff',.03],[.65,'#000',0],[1,'#000',.24]])}<clipPath id="${gid('cwuClip')}"><rect x="54" y="1065" width="202" height="339" rx="27"/></clipPath><clipPath id="${gid('bufferClip')}"><rect x="414" y="1065" width="202" height="339" rx="27"/></clipPath><clipPath id="${gid('coilFrontClip')}" clipPathUnits="userSpaceOnUse">${coilFront.map(([start,end])=>`<rect x="0" y="${start}" width="1000" height="${end-start}"/>`).join('')}</clipPath>`;
+  const defs=`${gradient('background','cx=".5" cy=".35" r=".8"',[[0,'#111a1f'],[.6,'#080e12'],[1,'#05090c']],'radialGradient')}${gradient('tankMetal','x1="0" x2="1"',[[0,'#6c7a83'],[.035,'#e4eaed'],[.08,'#f8fafb'],[.14,'#7c8b94'],[.48,'#3e4c55'],[.85,'#8e9da5'],[.94,'#e4eaed'],[1,'#5a6972']])}${gradient('metal','x1="0" x2="1"',[[0,'#77858e'],[.16,'#e6ebee'],[.45,'#a7b3bb'],[.72,'#657680'],[1,'#c5cfd5']])}${gradient('pumpMetal','x1="0" y1="0" x2="1" y2="1"',[[0,'#f3f6f7'],[.45,'#a2b0b8'],[1,'#475962']])}${gradient('control','',[[0,'#253239'],[.75,'#10191f'],[1,'#060b0e']],'radialGradient')}${gradient('panel','x1="0" y1="0" x2="1" y2="1"',[[0,'#182126'],[1,'#080e12']])}${gradient('blade','x1="0" y1="0" x2="1" y2="1"',[[0,'#d0d8dd'],[.45,'#82929d'],[1,'#354954']])}${gradient('cwuFill','x1="0" y1="0" x2="0" y2="1"',[[0,cwu],[1,cwu]])}${gradient('bufferFill','x1="0" y1="0" x2="0" y2="1"',[[0,co[0]],[.5,co[1]],[1,co[2]]])}${gradient('coilHeat','gradientUnits="userSpaceOnUse" x1="651" y1="775" x2="651" y2="627"',[[0,'#29bfea'],[.45,'#a544d4'],[1,'#f33756']])}${gradient('liquidGloss','x1="0" x2="1"',[[0,'#fff',.18],[.18,'#fff',.03],[.65,'#000',0],[1,'#000',.24]])}<clipPath id="${gid('cwuClip')}"><rect x="54" y="1065" width="202" height="339" rx="27"/></clipPath><clipPath id="${gid('bufferClip')}"><rect x="414" y="1065" width="202" height="339" rx="27"/></clipPath><clipPath id="${gid('coilFrontClip')}" clipPathUnits="userSpaceOnUse">${coilFront.map(([start,end])=>`<rect x="607" y="${start}" width="88" height="${end-start}"/>`).join('')}</clipPath>`;
   return `<style>
    :host{display:block;box-sizing:border-box;min-width:0;max-width:100%}
    .hf-wrap{width:100%;max-width:var(--hf-width,640px);margin:0 auto;min-width:0}

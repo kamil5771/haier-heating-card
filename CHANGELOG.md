@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.9
+- Increased the slope of the three coil turns and smoothed their transition into the fixed blue return pipe.
+
+## 0.5.8
+- Reworked the condenser coil into three evenly spaced turns, with one continuous path between the red supply and blue return.
+
 ## 0.5.7
 - Removed clipping strip on coil turns.
 - Coil stretched; last turn joins blue return in front of the condenser.
