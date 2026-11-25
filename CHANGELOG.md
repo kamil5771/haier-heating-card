@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.6
+- Removed the top coil turn.
+- Removed the lower loop behind the cylinder; connected directly to blue return.
+- Retained the existing card layout and animations.
+
+# Changelog
+
 ## 0.5.5
 - Restore interpolated flow animation with explicit CSS length units.
 - Replace visible coil hooks with inclined turns joined tangentially behind the cylinder.
