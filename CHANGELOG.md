@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.5.12
+- Used three identical coil passes and replaced rectangular clipping with a coil-shaped mask.
+
 ## 0.5.11
 - Centered the supply and return pipes around the condenser midpoint and aligned their readings. Retained the cylinder and its vertical connections.
 
