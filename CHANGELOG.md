@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.7
+- Removed clipping strip on coil turns.
+- Coil stretched; last turn joins blue return in front of the condenser.
+
 ## 0.5.6
 - Removed the top coil turn.
 - Removed the lower loop behind the cylinder; connected directly to blue return.

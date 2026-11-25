@@ -66,10 +66,10 @@ test('one routed water circuit and three phase-aligned visible turns',()=>{
  assert.equal(flows.length,4);
  const d=flows[0][1];
  assert.equal((d.match(/M/g)||[]).length,1);
- assert.match(d,/^M960 627 H671.*685 775 H960$/);
+ assert.match(d,/^M960 627 H671.*708 775 H960$/);
  for(const [i,p] of flows.slice(1).entries()){
   assert.ok(d.includes(p[1].split(' ').slice(2).join(' ')));
-  assert.equal(Number(p[2]),[25.88,2.4,16.92][i]);
+  assert.equal(Number(p[2]),[25.88,2.9,17.92][i]);
  }
  assert.ok(s.indexOf('data-condenser-back')<s.indexOf('data-condenser-body'));
  assert.ok(s.indexOf('data-condenser-body')<s.indexOf('data-condenser-front'));
