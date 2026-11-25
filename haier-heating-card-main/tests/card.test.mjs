@@ -68,7 +68,7 @@ test('one routed water circuit and three phase-aligned visible turns',()=>{
  assert.match(full,/^M960 609 H700 .*700 757 H960$/);
  const front=[...layers[1][2].matchAll(/<path d="([^"]+)"[^>]*class="hf-flow hf-reverse"[^>]*--hf-phase:([\d.]+)px/g)];
  assert.equal(front.length,3);
- assert.deepEqual(front.map(m=>Number(m[2])),[32.62,19.29,5.96]);
+ assert.deepEqual(front.map(m=>Number(m[2])),[32.62,3.32,12.03]);
  for(const [i,y] of [641,690,739].entries()){
   const profile=`C595 ${y+7} 612 ${y+9} 629 ${y+12} C653 ${y+16} 674 ${y+18} 700 ${y+18}`;
   assert.equal(front[i][1],`M595 ${y} ${profile}${i===2?' H960':''}`);

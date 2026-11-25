@@ -1,4 +1,4 @@
-# Haier Heating Card v0.5.13
+# Haier Heating Card v0.5.14
 
 Animowany schemat instalacji grzewczej dla dashboardu Home Assistant. Karta nie wymaga `custom:button-card` i nie zawiera domyślnych identyfikatorów encji.
 
@@ -45,6 +45,9 @@ W górnym panelu wyświetlane są jako **Pobrano** i **Wytworzono**, z jednostk�
 ## Skraplacz
 
 Owijka wodna jest oddzielona od obiegu czynnika chłodniczego. Jej tylne fragmenty są zasłonięte przez metalowy korpus, a kolor przechodzi od niebieskiego na dole do czerwonego na górze.
+
+## v0.5.14
+- Shortened the right-hand coil bends while preserving the three front profiles, the straight return and the pipe positions.
 
 ## v0.5.13
 - Used the same shallow profile for all three coil turns with a straight return outlet, and removed clipping from the foreground strokes.

@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.5.14
+- Shortened the right-hand coil bends while preserving the three front profiles, the straight return and the pipe positions.
+
 ## 0.5.13
 - Used the same shallow profile for all three coil turns with a straight return outlet, and removed clipping from the foreground strokes.
 
