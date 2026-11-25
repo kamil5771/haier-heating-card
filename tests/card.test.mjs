@@ -62,14 +62,14 @@ test('long press opens more info without switch toggle',async()=>{
 });
 test('one routed water circuit and four phase-aligned visible turns',()=>{
  const s=make().shadowRoot.innerHTML;
- const flows=[...s.matchAll(/data-water-flow="true" d="([^"]+)" class="hf-flow hf-reverse" style="--hf-phase:([\d.]+)"/g)];
+ const flows=[...s.matchAll(/data-water-flow="true" d="([^"]+)" class="hf-flow hf-reverse" style="--hf-phase:([\d.]+)px"/g)];
  assert.equal(flows.length,5);
  const d=flows[0][1];
  assert.equal((d.match(/M/g)||[]).length,1);
- assert.match(d,/^M960 627 H677.*694 775 H960$/);
+ assert.match(d,/^M960 627 H671.*685 775 H960$/);
  for(const [i,p] of flows.slice(1).entries()){
   assert.ok(d.includes(p[1].split(' ').slice(2).join(' ')));
-  assert.equal(Number(p[2]),[3.22,20.25,33.47,8.69][i]);
+  assert.equal(Number(p[2]),[8.59,30.73,14.86,37][i]);
  }
  assert.ok(s.indexOf('data-condenser-back')<s.indexOf('data-condenser-body'));
  assert.ok(s.indexOf('data-condenser-body')<s.indexOf('data-condenser-front'));
