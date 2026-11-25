@@ -144,19 +144,22 @@ class HaierHeatingCard extends HTMLElement {
   // Refrigerant circuit connects to the cylinder, not to the external water coil.
   const refrigerantHot='M563 440H627 Q651 440 651 464 V540';
   const refrigerantOutlet='M651 826 V851 Q651 875 627 875 H535';
-  // One centreline: only the near half-turns are duplicated above the cylinder.
-  // Each foreground stroke ends at an outer tangent, where the rear stroke continues.
-  const wrapY=[617,672];
-  const frontTurn=y=>`C593 ${y+8} 603 ${y+13} 617 ${y+16} C644 ${y+22} 676 ${y+22} 695 ${y+27} C698 ${y+29} 698 ${y+33} 694 ${y+37}`;
-  // Last turn stays in front of the cylinder and runs straight into the blue return.
-  const lastTail='C593 735 603 740 617 743 C652 751 670 775 708 775';
-  const frontTurns=[...wrapY.map(y=>`M593 ${y} ${frontTurn(y)}`),`M593 727 ${lastTail}`];
-  const rearTurns=wrapY.map((y,i)=>{const next=wrapY[i+1]??727;return `C709 ${y+43} 699 ${y+45} 682 ${y+45} C653 ${y+45} 593 ${next-13} 593 ${next}`;});
-  const waterRoute=`M960 627 H671 C635 627 632 617 593 617 ${wrapY.map((y,i)=>frontTurn(y)+' '+rearTurns[i]).join(' ')} ${lastTail} H960`;
-  const frontPhase=[25.88,2.9,17.92];
-  const waterFlow=(d,phase=0)=>hp?`<path data-water-flow="true" d="${d}" class="hf-flow hf-reverse" style="--hf-phase:${phase}px" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="3" stroke-linecap="round" pointer-events="none"/>`:'';
+  // Each 44-unit turn consists of one rear half-turn and one front half-turn.
+  // One continuous path preserves dash phase and keeps both pipe connections tangent.
+  const coilFront=[[649,671],[693,715],[737,759]];
+  const waterRoute=[
+   'M960 627 H722 C710 627 704 629 695 630',
+   'C670 633 596 630 596 649',
+   'C596 658 624 660 651 662 C677 664 704 663 704 671',
+   'C704 680 675 682 651 684 C624 686 596 684 596 693',
+   'C596 702 624 704 651 706 C677 708 704 707 704 715',
+   'C704 724 675 726 651 728 C624 730 596 728 596 737',
+   'C596 746 624 748 651 750 C677 752 704 751 704 759',
+   'C704 770 717 775 737 775 H960'
+  ].join(' ');
+  const waterPipe=pipe(waterRoute,url('coilHeat'),hp,true,12);
   const gradient=(id,axis,stops,tag='linearGradient')=>`<${tag} id="${gid(id)}" ${axis}>${stops.map(([o,c,alpha])=>`<stop offset="${o}" stop-color="${c}"${alpha==null?'':` stop-opacity="${alpha}"`}/>`).join('')}</${tag}>`;
-  const defs=`${gradient('background','cx=".5" cy=".35" r=".8"',[[0,'#111a1f'],[.6,'#080e12'],[1,'#05090c']],'radialGradient')}${gradient('tankMetal','x1="0" x2="1"',[[0,'#6c7a83'],[.035,'#e4eaed'],[.08,'#f8fafb'],[.14,'#7c8b94'],[.48,'#3e4c55'],[.85,'#8e9da5'],[.94,'#e4eaed'],[1,'#5a6972']])}${gradient('metal','x1="0" x2="1"',[[0,'#77858e'],[.16,'#e6ebee'],[.45,'#a7b3bb'],[.72,'#657680'],[1,'#c5cfd5']])}${gradient('pumpMetal','x1="0" y1="0" x2="1" y2="1"',[[0,'#f3f6f7'],[.45,'#a2b0b8'],[1,'#475962']])}${gradient('control','',[[0,'#253239'],[.75,'#10191f'],[1,'#060b0e']],'radialGradient')}${gradient('panel','x1="0" y1="0" x2="1" y2="1"',[[0,'#182126'],[1,'#080e12']])}${gradient('blade','x1="0" y1="0" x2="1" y2="1"',[[0,'#d0d8dd'],[.45,'#82929d'],[1,'#354954']])}${gradient('cwuFill','x1="0" y1="0" x2="0" y2="1"',[[0,cwu],[1,cwu]])}${gradient('bufferFill','x1="0" y1="0" x2="0" y2="1"',[[0,co[0]],[.5,co[1]],[1,co[2]]])}${gradient('coilHeat','gradientUnits="userSpaceOnUse" x1="651" y1="775" x2="651" y2="590"',[[0,'#29bfea'],[.45,'#a544d4'],[1,'#f33756']])}${gradient('liquidGloss','x1="0" x2="1"',[[0,'#fff',.18],[.18,'#fff',.03],[.65,'#000',0],[1,'#000',.24]])}<clipPath id="${gid('cwuClip')}"><rect x="54" y="1065" width="202" height="339" rx="27"/></clipPath><clipPath id="${gid('bufferClip')}"><rect x="414" y="1065" width="202" height="339" rx="27"/></clipPath>`;
+  const defs=`${gradient('background','cx=".5" cy=".35" r=".8"',[[0,'#111a1f'],[.6,'#080e12'],[1,'#05090c']],'radialGradient')}${gradient('tankMetal','x1="0" x2="1"',[[0,'#6c7a83'],[.035,'#e4eaed'],[.08,'#f8fafb'],[.14,'#7c8b94'],[.48,'#3e4c55'],[.85,'#8e9da5'],[.94,'#e4eaed'],[1,'#5a6972']])}${gradient('metal','x1="0" x2="1"',[[0,'#77858e'],[.16,'#e6ebee'],[.45,'#a7b3bb'],[.72,'#657680'],[1,'#c5cfd5']])}${gradient('pumpMetal','x1="0" y1="0" x2="1" y2="1"',[[0,'#f3f6f7'],[.45,'#a2b0b8'],[1,'#475962']])}${gradient('control','',[[0,'#253239'],[.75,'#10191f'],[1,'#060b0e']],'radialGradient')}${gradient('panel','x1="0" y1="0" x2="1" y2="1"',[[0,'#182126'],[1,'#080e12']])}${gradient('blade','x1="0" y1="0" x2="1" y2="1"',[[0,'#d0d8dd'],[.45,'#82929d'],[1,'#354954']])}${gradient('cwuFill','x1="0" y1="0" x2="0" y2="1"',[[0,cwu],[1,cwu]])}${gradient('bufferFill','x1="0" y1="0" x2="0" y2="1"',[[0,co[0]],[.5,co[1]],[1,co[2]]])}${gradient('coilHeat','gradientUnits="userSpaceOnUse" x1="651" y1="775" x2="651" y2="627"',[[0,'#29bfea'],[.45,'#a544d4'],[1,'#f33756']])}${gradient('liquidGloss','x1="0" x2="1"',[[0,'#fff',.18],[.18,'#fff',.03],[.65,'#000',0],[1,'#000',.24]])}<clipPath id="${gid('cwuClip')}"><rect x="54" y="1065" width="202" height="339" rx="27"/></clipPath><clipPath id="${gid('bufferClip')}"><rect x="414" y="1065" width="202" height="339" rx="27"/></clipPath><clipPath id="${gid('coilFrontClip')}" clipPathUnits="userSpaceOnUse">${coilFront.map(([start,end])=>`<rect x="0" y="${start}" width="1000" height="${end-start}"/>`).join('')}</clipPath>`;
   return `<style>
    :host{display:block;box-sizing:border-box;min-width:0;max-width:100%}
    .hf-wrap{width:100%;max-width:var(--hf-width,640px);margin:0 auto;min-width:0}
@@ -181,11 +184,9 @@ class HaierHeatingCard extends HTMLElement {
   ${control(E.heater,497,590,'heat',false,32,String(states[E.heater]?.state||'').trim().toLocaleUpperCase('pl-PL')==='WŁ')}${control(E.limit,497,681,'gauge',true,32,on(E.limit))}${control(E.cooling,497,772,'snow',true,32,on(E.cooling))}
   ${pipe(refrigerantHot,hot,running,false,12)}
   ${pipe(refrigerantOutlet,hot,running,false,12)}
-  <g data-condenser-back="true">${pipe(waterRoute,url('coilHeat'),false,false,12)}
-    ${pipe('M677 627H960',hot)}${pipe('M960 775H700',cold)}${waterFlow(waterRoute)}
-  </g>
+  <g data-condenser-back="true">${waterPipe}</g>
   <g data-condenser-body="true"><rect x="608" y="540" width="86" height="286" rx="25" fill="${url('metal')}" stroke="#c9d5dc" stroke-width="2"/><ellipse cx="651" cy="548" rx="42" ry="12" fill="#dce4e9" stroke="#7d919e" stroke-width="1"/><path d="M620 567V804M682 567V804" stroke="#f2f6f8" stroke-opacity=".3" stroke-width="2"/><ellipse cx="651" cy="816" rx="40" ry="9" fill="#7e919d" stroke="#c1d0d9" stroke-width="1"/></g>
-  <g data-condenser-front="true">${frontTurns.map((d,i)=>pipe(d,url('coilHeat'),false,false,12).replaceAll('stroke-linecap="round"','stroke-linecap="butt"')+waterFlow(d,frontPhase[i])).join('')}</g>
+  <g data-condenser-front="true" clip-path="${url('coilFrontClip')}">${waterPipe}</g>
   ${pump(E.electric,791,627,hot,29,hp)}
   ${text(E.tho,752,506,temp(E.tho),30)}${text(E.supplyTarget,959,533,temp(E.supplyTarget),31,'#ff3554','end')}${text(E.supply,959,578,temp(E.supply),34,'#f4f6f7','end')}${text(E.delta,957,701,'Δ '+temp(E.delta),31,'#f4f6f7','end')}${text(E.return,957,817,temp(E.return),32,'#f4f6f7','end')}${text(E.thi,744,859,temp(E.thi),30)}
   <g transform="translate(494 875)"${entity(E.expansion)}><path d="M-39 -20L0 0L-39 20ZM39 -20L0 0L39 20Z" fill="${url('metal')}" stroke="#e1e9ed" stroke-width="2"/><rect x="-14" y="-39" width="28" height="20" rx="4" fill="${url('metal')}" stroke="#e1e9ed" stroke-width="2"/><path d="M0 -19V-1" stroke="#e0e9ef" stroke-width="4"/><ellipse cy="-39" rx="14" ry="4" fill="#e1e9ed"/><rect x="-45" y="-45" width="90" height="75" fill="transparent"/></g>${text(E.expansion,494,925,val(E.expansion,1),34)}

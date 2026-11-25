@@ -62,15 +62,14 @@ test('long press opens more info without switch toggle',async()=>{
 });
 test('one routed water circuit and three phase-aligned visible turns',()=>{
  const s=make().shadowRoot.innerHTML;
- const flows=[...s.matchAll(/data-water-flow="true" d="([^"]+)" class="hf-flow hf-reverse" style="--hf-phase:([\d.]+)px"/g)];
- assert.equal(flows.length,4);
- const d=flows[0][1];
- assert.equal((d.match(/M/g)||[]).length,1);
- assert.match(d,/^M960 627 H671.*708 775 H960$/);
- for(const [i,p] of flows.slice(1).entries()){
-  assert.ok(d.includes(p[1].split(' ').slice(2).join(' ')));
-  assert.equal(Number(p[2]),[25.88,2.9,17.92][i]);
- }
+ const layers=[...s.matchAll(/<g data-condenser-(back|front)="true"[^>]*>(.*?)<\/g>/g)];
+ assert.equal(layers.length,2);
+ const flows=layers.map(([, , paths])=>paths.match(/<path d="([^"]+)"[^>]*class="hf-flow hf-reverse"/)[1]);
+ assert.equal(flows[0],flows[1]);
+ assert.equal((flows[0].match(/M/g)||[]).length,1);
+ assert.match(flows[0],/^M960 627 H722.*737 775 H960$/);
+ const clip=s.match(/<clipPath id="[^"]+-coilFrontClip"[^>]*>(.*?)<\/clipPath>/)[1];
+ assert.deepEqual([...clip.matchAll(/y="(\d+)" width="1000" height="22"/g)].map(m=>Number(m[1])),[649,693,737]);
  assert.ok(s.indexOf('data-condenser-back')<s.indexOf('data-condenser-body'));
  assert.ok(s.indexOf('data-condenser-body')<s.indexOf('data-condenser-front'));
 });
