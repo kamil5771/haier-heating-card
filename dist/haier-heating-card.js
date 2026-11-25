@@ -1,4 +1,4 @@
-// Haier Heating Card v0.5.3
+// Haier Heating Card v0.5.4
 const GROUPS = {
  'Pompa ciepła': 'electric thermal cop status program controlPc mode control energyDaily heatDaily fan compressor suction discharge ambient defrost expansion tho thi supply supplyTarget return delta limit cooling heater',
  'Dom i pogoda': 'north south groundRoom upperRoom groundThermostat upperThermostat',
@@ -144,35 +144,25 @@ class HaierHeatingCard extends HTMLElement {
   // Refrigerant circuit connects to the cylinder, not to the external water coil.
   const refrigerantHot='M563 440H627 Q651 440 651 464 V540';
   const refrigerantOutlet='M651 826 V851 Q651 875 627 875 H535';
-  // A SINGLE uninterrupted coil centreline. Its front and rear portions
-  // are rendered as separate SVG layers only to achieve correct occlusion.
-  // The front pieces run right-to-left; the hidden pieces join left-to-right.
-  // Water flows in reverse order, from blue return (bottom) to red supply (top).
-  const coilFront=[
-    'M694 627 C707 622 706 614 691 608 C660 595 637 601 608 590',
-    'M694 675 C707 670 706 662 691 658 C660 645 637 651 608 640',
-    'M694 725 C707 720 706 712 691 708 C660 695 637 701 608 690',
-    'M694 765 C707 760 706 752 691 748 C660 735 637 741 608 730'
-  ];
-  const coilRear=[
-    'M608 590 C631 610 663 654 694 675',
-    'M608 640 C631 660 663 704 694 725',
-    'M608 690 C631 710 663 744 694 765',
-    'M608 730 C633 755 662 776 694 775'
-  ];
-  // Explicit sequence of connected endpoints:
-  // RED (694,627) -> front1 -> (608,590) -> rear1 -> (694,675)
-  // -> front2 -> (608,640) -> rear2 -> (694,725)
-  // -> front3 -> (608,690) -> rear3 -> (694,765)
-  // -> front4 -> (608,730) -> rear4 -> BLUE (694,775).
+  // One continuous centreline. The front segments repeat that geometry
+  // with the same dash phase; rear geometry is never repainted on the cylinder.
+  const wrapY=[560,624,671,718];
+  const frontTurn=y=>`C589 ${y} 588 ${y+14} 603 ${y+21} C626 ${y+32} 671 ${y+27} 694 ${y+30} C708 ${y+32} 711 ${y+39} 694 ${y+39}`;
+  const frontTurns=wrapY.map(y=>`M608 ${y} ${frontTurn(y)}`);
+  const frontClips=wrapY.map((y,i)=>`<clipPath id="${gid('front-turn-'+i)}" clipPathUnits="userSpaceOnUse"><path d="M580 ${y-12} H608 V${y+8} H720 V${y+52} H694 V${y+39} H580 Z"/></clipPath>`).join('');
+  const rearTurns=wrapY.slice(0,-1).map((y,i)=>`C665 ${y+39} 638 ${wrapY[i+1]} 608 ${wrapY[i+1]}`);
+  const waterRoute=`M960 627 H677 C647 627 635 560 608 560 ${wrapY.map((y,i)=>frontTurn(y)+' '+(rearTurns[i]||'')).join(' ')} C675 757 677 775 694 775 H960`;
+  // Arc lengths from the red endpoint to each front turn, modulo the 38-unit dash pattern.
+  const frontPhase=[3.22,20.25,33.47,8.69];
+  const waterFlow=(d,phase=0)=>hp?`<path data-water-flow="true" d="${d}" class="hf-flow hf-reverse" style="--hf-phase:${phase}" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="3" stroke-linecap="round" pointer-events="none"/>`:'';
   const gradient=(id,axis,stops,tag='linearGradient')=>`<${tag} id="${gid(id)}" ${axis}>${stops.map(([o,c,alpha])=>`<stop offset="${o}" stop-color="${c}"${alpha==null?'':` stop-opacity="${alpha}"`}/>`).join('')}</${tag}>`;
-  const defs=`${gradient('background','cx=".5" cy=".35" r=".8"',[[0,'#111a1f'],[.6,'#080e12'],[1,'#05090c']],'radialGradient')}${gradient('tankMetal','x1="0" x2="1"',[[0,'#6c7a83'],[.035,'#e4eaed'],[.08,'#f8fafb'],[.14,'#7c8b94'],[.48,'#3e4c55'],[.85,'#8e9da5'],[.94,'#e4eaed'],[1,'#5a6972']])}${gradient('metal','x1="0" x2="1"',[[0,'#77858e'],[.16,'#e6ebee'],[.45,'#a7b3bb'],[.72,'#657680'],[1,'#c5cfd5']])}${gradient('pumpMetal','x1="0" y1="0" x2="1" y2="1"',[[0,'#f3f6f7'],[.45,'#a2b0b8'],[1,'#475962']])}${gradient('control','',[[0,'#253239'],[.75,'#10191f'],[1,'#060b0e']],'radialGradient')}${gradient('panel','x1="0" y1="0" x2="1" y2="1"',[[0,'#182126'],[1,'#080e12']])}${gradient('blade','x1="0" y1="0" x2="1" y2="1"',[[0,'#d0d8dd'],[.45,'#82929d'],[1,'#354954']])}${gradient('cwuFill','x1="0" y1="0" x2="0" y2="1"',[[0,cwu],[1,cwu]])}${gradient('bufferFill','x1="0" y1="0" x2="0" y2="1"',[[0,co[0]],[.5,co[1]],[1,co[2]]])}${gradient('coilHeat','gradientUnits="userSpaceOnUse" x1="651" y1="775" x2="651" y2="590"',[[0,'#29bfea'],[.45,'#a544d4'],[1,'#f33756']])}${gradient('liquidGloss','x1="0" x2="1"',[[0,'#fff',.18],[.18,'#fff',.03],[.65,'#000',0],[1,'#000',.24]])}<clipPath id="${gid('cwuClip')}"><rect x="54" y="1065" width="202" height="339" rx="27"/></clipPath><clipPath id="${gid('bufferClip')}"><rect x="414" y="1065" width="202" height="339" rx="27"/></clipPath>`;
+  const defs=`${gradient('background','cx=".5" cy=".35" r=".8"',[[0,'#111a1f'],[.6,'#080e12'],[1,'#05090c']],'radialGradient')}${gradient('tankMetal','x1="0" x2="1"',[[0,'#6c7a83'],[.035,'#e4eaed'],[.08,'#f8fafb'],[.14,'#7c8b94'],[.48,'#3e4c55'],[.85,'#8e9da5'],[.94,'#e4eaed'],[1,'#5a6972']])}${gradient('metal','x1="0" x2="1"',[[0,'#77858e'],[.16,'#e6ebee'],[.45,'#a7b3bb'],[.72,'#657680'],[1,'#c5cfd5']])}${gradient('pumpMetal','x1="0" y1="0" x2="1" y2="1"',[[0,'#f3f6f7'],[.45,'#a2b0b8'],[1,'#475962']])}${gradient('control','',[[0,'#253239'],[.75,'#10191f'],[1,'#060b0e']],'radialGradient')}${gradient('panel','x1="0" y1="0" x2="1" y2="1"',[[0,'#182126'],[1,'#080e12']])}${gradient('blade','x1="0" y1="0" x2="1" y2="1"',[[0,'#d0d8dd'],[.45,'#82929d'],[1,'#354954']])}${gradient('cwuFill','x1="0" y1="0" x2="0" y2="1"',[[0,cwu],[1,cwu]])}${gradient('bufferFill','x1="0" y1="0" x2="0" y2="1"',[[0,co[0]],[.5,co[1]],[1,co[2]]])}${gradient('coilHeat','gradientUnits="userSpaceOnUse" x1="651" y1="775" x2="651" y2="590"',[[0,'#29bfea'],[.45,'#a544d4'],[1,'#f33756']])}${frontClips}${gradient('liquidGloss','x1="0" x2="1"',[[0,'#fff',.18],[.18,'#fff',.03],[.65,'#000',0],[1,'#000',.24]])}<clipPath id="${gid('cwuClip')}"><rect x="54" y="1065" width="202" height="339" rx="27"/></clipPath><clipPath id="${gid('bufferClip')}"><rect x="414" y="1065" width="202" height="339" rx="27"/></clipPath>`;
   return `<style>
    :host{display:block;box-sizing:border-box;min-width:0;max-width:100%}
    .hf-wrap{width:100%;max-width:var(--hf-width,640px);margin:0 auto;min-width:0}
    :host([data-fit-height]) .hf-wrap{max-width:min(var(--hf-width,640px),max(150px,calc((100vh - var(--hf-reserve,170px)) * .6666667)));max-width:min(var(--hf-width,640px),max(150px,calc((100dvh - var(--hf-reserve,170px)) * .6666667)))}
    .hf-svg{display:block;width:100%;height:auto;aspect-ratio:2/3;font-family:Manrope,Roboto,Arial,sans-serif;overflow:hidden;border-radius:20px;background:#080d10}
-   .hf-svg text{dominant-baseline:middle;paint-order:stroke;stroke:#070d10;stroke-width:2px;stroke-linejoin:round}.hf-click{cursor:pointer;-webkit-tap-highlight-color:transparent}.hf-flow{stroke-dasharray:6 32;animation:hf-flow 1.7s linear infinite}.hf-reverse{animation-direction:reverse}.hf-wind{animation:hf-wind 2.2s ease-in-out infinite}.hf-wind-still{opacity:.55}@keyframes hf-flow{to{stroke-dashoffset:-76}}@keyframes hf-wind{0%{opacity:.15;transform:translateX(-8px)}45%{opacity:.9}100%{opacity:.15;transform:translateX(10px)}}@media(prefers-reduced-motion:reduce){.hf-svg *{animation:none!important}}
+   .hf-svg text{dominant-baseline:middle;paint-order:stroke;stroke:#070d10;stroke-width:2px;stroke-linejoin:round}.hf-click{cursor:pointer;-webkit-tap-highlight-color:transparent}.hf-flow{stroke-dasharray:6 32;animation:hf-flow 1.7s linear infinite}.hf-reverse{animation-direction:reverse}.hf-wind{animation:hf-wind 2.2s ease-in-out infinite}.hf-wind-still{opacity:.55}@keyframes hf-flow{from{stroke-dashoffset:var(--hf-phase,0)}to{stroke-dashoffset:calc(var(--hf-phase,0) - 76)}}@keyframes hf-wind{0%{opacity:.15;transform:translateX(-8px)}45%{opacity:.9}100%{opacity:.15;transform:translateX(10px)}}@media(prefers-reduced-motion:reduce){.hf-svg *{animation:none!important}}
   </style><div class="hf-wrap"><svg class="hf-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1500" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Schemat instalacji grzewczej Haier"><defs>${defs}</defs>
   <rect width="1000" height="1500" rx="32" fill="${url('background')}"/><rect x="12" y="12" width="976" height="1476" rx="31" fill="none" stroke="#6b7981" stroke-width="2"/><rect x="17" y="17" width="966" height="1466" rx="28" fill="none" stroke="#d6e1e6" stroke-opacity=".07"/><path d="M245 48V186M585 48V186M38 211H962M38 307H962" stroke="#839099" stroke-opacity=".5" stroke-width="1.5"/>
   ${text(E.electric,126,70,power(E.electric),36)}${text(E.thermal,126,118,power(E.thermal),34)}${text(E.cop,126,166,'COP '+val(E.cop,2,''),30)}
@@ -191,11 +181,11 @@ class HaierHeatingCard extends HTMLElement {
   ${control(E.heater,497,590,'heat',false,32,String(states[E.heater]?.state||'').trim().toLocaleUpperCase('pl-PL')==='WŁ')}${control(E.limit,497,681,'gauge',true,32,on(E.limit))}${control(E.cooling,497,772,'snow',true,32,on(E.cooling))}
   ${pipe(refrigerantHot,hot,running,false,12)}
   ${pipe(refrigerantOutlet,hot,running,false,12)}
-  <g data-condenser-back="true">${coilRear.map(d=>pipe(d,url('coilHeat'),hp,true,11)).join('')}
-    ${pipe('M694 627H960',hot,hp)}${pipe('M960 775H694',cold,hp)}
+  <g data-condenser-back="true">${pipe(waterRoute,url('coilHeat'),false,false,12)}
+    ${pipe('M677 627H960',hot)}${pipe('M960 775H685',cold)}${waterFlow(waterRoute)}
   </g>
   <g data-condenser-body="true"><rect x="608" y="540" width="86" height="286" rx="25" fill="${url('metal')}" stroke="#c9d5dc" stroke-width="2"/><ellipse cx="651" cy="548" rx="42" ry="12" fill="#dce4e9" stroke="#7d919e" stroke-width="1"/><path d="M620 567V804M682 567V804" stroke="#f2f6f8" stroke-opacity=".3" stroke-width="2"/><ellipse cx="651" cy="816" rx="40" ry="9" fill="#7e919d" stroke="#c1d0d9" stroke-width="1"/></g>
-  <g data-condenser-front="true">${coilFront.map(d=>pipe(d,url('coilHeat'),hp,true,11)).join('')}</g>
+  <g data-condenser-front="true">${frontTurns.map((d,i)=>`<g clip-path="${url('front-turn-'+i)}">${pipe(d,url('coilHeat'),false,false,12)}${waterFlow(d,frontPhase[i])}</g>`).join('')}</g>
   ${pump(E.electric,791,627,hot,29,hp)}
   ${text(E.tho,752,506,temp(E.tho),30)}${text(E.supplyTarget,959,533,temp(E.supplyTarget),31,'#ff3554','end')}${text(E.supply,959,578,temp(E.supply),34,'#f4f6f7','end')}${text(E.delta,957,701,'Δ '+temp(E.delta),31,'#f4f6f7','end')}${text(E.return,957,817,temp(E.return),32,'#f4f6f7','end')}${text(E.thi,744,859,temp(E.thi),30)}
   <g transform="translate(494 875)"${entity(E.expansion)}><path d="M-39 -20L0 0L-39 20ZM39 -20L0 0L39 20Z" fill="${url('metal')}" stroke="#e1e9ed" stroke-width="2"/><rect x="-14" y="-39" width="28" height="20" rx="4" fill="${url('metal')}" stroke="#e1e9ed" stroke-width="2"/><path d="M0 -19V-1" stroke="#e0e9ef" stroke-width="4"/><ellipse cy="-39" rx="14" ry="4" fill="#e1e9ed"/><rect x="-45" y="-45" width="90" height="75" fill="transparent"/></g>${text(E.expansion,494,925,val(E.expansion,1),34)}

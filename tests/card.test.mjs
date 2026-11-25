@@ -13,8 +13,8 @@ const src=readFileSync('dist/haier-heating-card.js','utf8');
 vm.runInNewContext(src,{HTMLElement:Host,customElements:{get:k=>registry.get(k),define:(k,v)=>registry.set(k,v)},window:{},setTimeout,clearTimeout,CustomEvent:class CustomEvent{constructor(type,options){this.type=type;this.detail=options.detail;}},document:{createElement:()=>({set innerHTML(v){this.content={childNodes:[]};}})}});
 const Card=registry.get('haier-heating-card');
 const make=(config={})=>{
- const c=new Card();c.setConfig({max_width:0,entities:{compressor:'sensor.comp',groundTemp:'sensor.ground',upperTemp:'sensor.upper',bufferTop:'sensor.top',cwu:'sensor.cwu',bufferCharge:'sensor.charge'},...config});
- c.hass={states:{'sensor.comp':{state:'42'},'sensor.ground':{state:'31.5'},'sensor.upper':{state:'29.5'},'sensor.top':{state:'33'},'sensor.cwu':{state:'41'},'sensor.charge':{state:'50'}}};return c;
+ const c=new Card();c.setConfig({max_width:0,entities:{electric:'sensor.electric',compressor:'sensor.comp',groundTemp:'sensor.ground',upperTemp:'sensor.upper',bufferTop:'sensor.top',cwu:'sensor.cwu',bufferCharge:'sensor.charge'},...config});
+ c.hass={states:{'sensor.electric':{state:'597'},'sensor.comp':{state:'42'},'sensor.ground':{state:'31.5'},'sensor.upper':{state:'29.5'},'sensor.top':{state:'33'},'sensor.cwu':{state:'41'},'sensor.charge':{state:'50'}}};return c;
 };
 test('no imposed Sections columns; full and manual width',()=>{
  assert.equal(Card.prototype.getGridOptions,undefined);
@@ -27,7 +27,7 @@ test('original panel geometry and labels with missing optional sensors',()=>{
  assert.match(s,/x="752" y="1210" width="226" height="148" rx="23"/);
  for(const text of ['PARTER','PIĘTRO','31,5°C','29,5°C','bufor CO','CWU']) assert.ok(s.includes(text),text);
 });
-test('five rays and continuous condenser; evaporator follows leftward start',()=>{
+test('five rays and continuous condenser; refrigerant runs clockwise',()=>{
  const s=make().shadowRoot.innerHTML;
  const sun=s.match(/data-sun-rays="5" d="([^"]+)"/)[1];assert.equal((sun.match(/M/g)||[]).length,5);
  const red=s.match(/<path d="(M563 440[^"]+)"[^>]*class="hf-flow"/)[1];assert.equal((red.match(/M/g)||[]).length,1);assert.match(red,/V540$/);assert.match(s,/M651 826 V851 Q651 875 627 875 H535/);assert.match(s,/data-condenser-front="true"/);assert.match(s,/data-condenser-back="true"/);assert.match(s,/gradientUnits="userSpaceOnUse"/);
@@ -60,20 +60,17 @@ test('long press opens more info without switch toggle',async()=>{
  assert.equal(events.filter(e=>e.type==='hass-more-info').length,1);
  assert.equal(events[0].detail.entityId,'switch.test');
 });
-test('single continuous helical route: all front and rear joins, red to blue',()=>{
+test('one routed water circuit and four phase-aligned visible turns',()=>{
  const s=make().shadowRoot.innerHTML;
- const expected=[
- 'M694 627 C707 622 706 614 691 608 C660 595 637 601 608 590',
- 'M608 590 C631 610 663 654 694 675',
- 'M694 675 C707 670 706 662 691 658 C660 645 637 651 608 640',
- 'M608 640 C631 660 663 704 694 725',
- 'M694 725 C707 720 706 712 691 708 C660 695 637 701 608 690',
- 'M608 690 C631 710 663 744 694 765',
- 'M694 765 C707 760 706 752 691 748 C660 735 637 741 608 730',
- 'M608 730 C633 755 662 776 694 775',
- 'M694 627H960','M960 775H694'
- ];
- for(const d of expected)assert.ok(s.includes(d),d);
- assert.match(s,/gradientUnits="userSpaceOnUse" x1="651" y1="775" x2="651" y2="590"/);
- assert.match(s,/data-condenser-front="true"/);assert.match(s,/data-condenser-back="true"/);
+ const flows=[...s.matchAll(/data-water-flow="true" d="([^"]+)" class="hf-flow hf-reverse" style="--hf-phase:([\d.]+)"/g)];
+ assert.equal(flows.length,5);
+ const d=flows[0][1];
+ assert.equal((d.match(/M/g)||[]).length,1);
+ assert.match(d,/^M960 627 H677.*694 775 H960$/);
+ for(const [i,p] of flows.slice(1).entries()){
+  assert.ok(d.includes(p[1].split(' ').slice(2).join(' ')));
+  assert.equal(Number(p[2]),[3.22,20.25,33.47,8.69][i]);
+ }
+ assert.ok(s.indexOf('data-condenser-back')<s.indexOf('data-condenser-body'));
+ assert.ok(s.indexOf('data-condenser-body')<s.indexOf('data-condenser-front'));
 });
