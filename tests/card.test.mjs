@@ -30,7 +30,7 @@ test('original panel geometry and labels with missing optional sensors',()=>{
 test('five rays and continuous condenser; evaporator follows leftward start',()=>{
  const s=make().shadowRoot.innerHTML;
  const sun=s.match(/data-sun-rays="5" d="([^"]+)"/)[1];assert.equal((sun.match(/M/g)||[]).length,5);
- const red=s.match(/<path d="(M563 440[^"]+)"[^>]*class="hf-flow"/)[1];assert.equal((red.match(/M/g)||[]).length,1);assert.match(red,/V540$/);assert.match(s,/M651 826 V851 Q651 875 627 875 H535/);assert.match(s,/data-condenser-front="true"/);assert.match(s,/data-condenser-back="true"/);
+ const red=s.match(/<path d="(M563 440[^"]+)"[^>]*class="hf-flow"/)[1];assert.equal((red.match(/M/g)||[]).length,1);assert.match(red,/V540$/);assert.match(s,/M651 826 V851 Q651 875 627 875 H535/);assert.match(s,/data-condenser-front="true"/);assert.match(s,/data-condenser-back="true"/);assert.match(s,/gradientUnits="userSpaceOnUse"/);
  assert.match(s,/<path d="M431 440H385[^\"]+"[^>]*class="hf-flow hf-reverse"/);
 });
 test('public source has no private entity IDs or pasted chat markup',()=>assert.doesNotMatch(src,/franciszkow|sensor\.haier_|fai-ChatInputEntity/i));
@@ -59,4 +59,10 @@ test('long press opens more info without switch toggle',async()=>{
  assert.equal(calls.length,0);
  assert.equal(events.filter(e=>e.type==='hass-more-info').length,1);
  assert.equal(events[0].detail.entityId,'switch.test');
+});
+test('condenser coil endpoints join rear paths without open ends',()=>{
+ const s=make().shadowRoot.innerHTML;
+ const ends=['M694 627 C680 616 633 591 602 590','M602 590 C590 598','700 620','M700 620 C722 629','602 650','M602 650 C590 658','700 680','M700 680 C722 689','602 710','M602 710 C590 718','700 740','M700 740 C719 746 720 762 694 775'];
+ for(const e of ends)assert.ok(s.includes(e),e);
+ assert.match(s,/gradientUnits="userSpaceOnUse" x1="651" y1="775" x2="651" y2="590"/);
 });
