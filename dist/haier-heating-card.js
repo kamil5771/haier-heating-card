@@ -1,4 +1,4 @@
-// Haier Heating Card v0.5.9
+// Haier Heating Card v0.5.10
 const GROUPS = {
  'Pompa ciepła': 'electric thermal cop status program controlPc mode control energyDaily heatDaily fan compressor suction discharge ambient defrost expansion tho thi supply supplyTarget return delta limit cooling heater',
  'Dom i pogoda': 'north south groundRoom upperRoom groundThermostat upperThermostat',
@@ -144,17 +144,17 @@ class HaierHeatingCard extends HTMLElement {
   // Refrigerant circuit connects to the cylinder, not to the external water coil.
   const refrigerantHot='M563 440H627 Q651 440 651 464 V540';
   const refrigerantOutlet='M651 826 V851 Q651 875 627 875 H535';
-  // Keep 44-unit spacing and a continuous stroke between the fixed pipe ends.
-  // The final front pass keeps its slope until it eases into the blue return.
-  const coilFront=[[641,675],[685,719],[729,780]];
+  // Space the three front passes 56 units apart. The last pass reaches
+  // the return axis on the cylinder face, before it leaves the cylinder.
+  const coilFront=[[644,666],[700,722],[756,785]];
   const waterRoute=[
    'M960 627 H722 C710 627 704 629 695 630',
-   'C670 633 596 625 596 641',
-   'C596 647 621 648 651 658 C681 668 704 669 704 675',
-   'C704 681 673 679 651 680 C629 681 596 679 596 685',
-   'C596 691 621 692 651 702 C681 712 704 713 704 719',
-   'C704 725 673 723 651 724 C629 725 596 723 596 729',
-   'C596 735 621 736 651 746 C681 756 718 775 752 775 H960'
+   'C664 634 596 624 596 644',
+   'C596 652 623 651 651 655 C679 659 704 658 704 666',
+   'C704 678 668 679 646 684 C621 690 596 688 596 700',
+   'C596 708 623 707 651 711 C679 715 704 714 704 722',
+   'C704 734 668 735 646 740 C621 746 596 744 596 756',
+   'C596 769 634 775 674 775 H960'
   ].join(' ');
   const waterPipe=pipe(waterRoute,url('coilHeat'),hp,true,12);
   const gradient=(id,axis,stops,tag='linearGradient')=>`<${tag} id="${gid(id)}" ${axis}>${stops.map(([o,c,alpha])=>`<stop offset="${o}" stop-color="${c}"${alpha==null?'':` stop-opacity="${alpha}"`}/>`).join('')}</${tag}>`;

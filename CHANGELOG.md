@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.5.10
+- Increased coil spacing to 56 SVG units and made the lower turn join the fixed blue return as one straight line.
+
 ## 0.5.9
 - Increased the slope of the three coil turns and smoothed their transition into the fixed blue return pipe.
 
