@@ -1,4 +1,4 @@
-// Haier Heating Card v0.4.8
+// Haier Heating Card v0.4.9
 const GROUPS = {
  'Pompa ciepła': 'electric thermal cop status program controlPc mode control energyDaily heatDaily fan compressor suction discharge ambient defrost expansion tho thi supply supplyTarget return delta limit cooling heater',
  'Dom i pogoda': 'north south groundRoom upperRoom groundThermostat upperThermostat',
@@ -141,9 +141,22 @@ class HaierHeatingCard extends HTMLElement {
    return `${hidden(p)?'':pipe(`M620 ${y+72}H752`,hot,on(p),false,11)}${pump(p,685,y+72,hot,26)}<rect x="752" y="${y}" width="226" height="148" rx="23" fill="${url('panel')}" stroke="#829097" stroke-width="2"/>${text(null,772,y+28,name,28,'#f1f4f5','start')}${text(t,772,y+65,temp(t),27,'#f5f7f8','start',700,99)}${text(tr,958,y+65,temp(tr),27,'#ff3554','end',700,99)}${hidden(v)?'':`${text(null,772,y+101,'Zawór',23,'#d7e0e4','start')}${text(v,958,y+101,val(v,0),25,'#fff','end')}<rect x="772" y="${y+125}" width="186" height="10" rx="5" fill="#303c42"/><rect x="772" y="${y+125}" width="${186*pct(v)/100}" height="10" rx="5" fill="${hot}"/>`}`;
   }
   const evap='M431 440H385 Q361 440 361 464 V512 Q361 535 337 535H293 C255 535 255 576 293 576H379 C418 576 418 617 379 617H293 C255 617 255 658 293 658H379 C418 658 418 699 379 699H293 C255 699 255 740 293 740H379 C418 740 418 781 379 781H293 C255 781 255 822 293 822H337 Q361 822 361 846 V851 Q361 875 385 875 H453';
-  const condenser='M563 440H627 Q651 440 651 465 V540 C651 553 726 554 726 568 C726 578 681 586 651 590 C551 603 551 631 651 644 C751 657 751 685 651 698 C551 711 551 739 651 752 C681 756 726 765 726 777 C726 790 651 791 651 809 V851 Q651 875 627 875 H535';
+  // Refrigerant circuit connects to the cylinder, not to the external water coil.
+  const refrigerantHot='M563 440H627 Q651 440 651 464 V540';
+  const refrigerantOutlet='M651 826 V851 Q651 875 627 875 H535';
+  // Three visible front wraps; their rear continuations are hidden by the opaque cylinder.
+  // Supply/return water connections disappear behind the cylinder's right edge.
+  const coilFront=[
+    'M608 580 C597 585 596 595 608 602 C634 618 667 614 694 625',
+    'M608 640 C597 645 596 655 608 662 C634 678 667 674 688 685',
+    'M608 700 C597 705 596 715 608 722 C634 738 667 734 688 745'
+  ];
+  const coilBack=[
+    'M687 625 C657 635 637 646 615 657',
+    'M687 685 C657 695 637 706 615 717'
+  ];
   const gradient=(id,axis,stops,tag='linearGradient')=>`<${tag} id="${gid(id)}" ${axis}>${stops.map(([o,c,alpha])=>`<stop offset="${o}" stop-color="${c}"${alpha==null?'':` stop-opacity="${alpha}"`}/>`).join('')}</${tag}>`;
-  const defs=`${gradient('background','cx=".5" cy=".35" r=".8"',[[0,'#111a1f'],[.6,'#080e12'],[1,'#05090c']],'radialGradient')}${gradient('tankMetal','x1="0" x2="1"',[[0,'#6c7a83'],[.035,'#e4eaed'],[.08,'#f8fafb'],[.14,'#7c8b94'],[.48,'#3e4c55'],[.85,'#8e9da5'],[.94,'#e4eaed'],[1,'#5a6972']])}${gradient('metal','x1="0" x2="1"',[[0,'#77858e'],[.16,'#e6ebee'],[.45,'#a7b3bb'],[.72,'#657680'],[1,'#c5cfd5']])}${gradient('pumpMetal','x1="0" y1="0" x2="1" y2="1"',[[0,'#f3f6f7'],[.45,'#a2b0b8'],[1,'#475962']])}${gradient('control','',[[0,'#253239'],[.75,'#10191f'],[1,'#060b0e']],'radialGradient')}${gradient('panel','x1="0" y1="0" x2="1" y2="1"',[[0,'#182126'],[1,'#080e12']])}${gradient('blade','x1="0" y1="0" x2="1" y2="1"',[[0,'#d0d8dd'],[.45,'#82929d'],[1,'#354954']])}${gradient('cwuFill','x1="0" y1="0" x2="0" y2="1"',[[0,cwu],[1,cwu]])}${gradient('bufferFill','x1="0" y1="0" x2="0" y2="1"',[[0,co[0]],[.5,co[1]],[1,co[2]]])}${gradient('liquidGloss','x1="0" x2="1"',[[0,'#fff',.18],[.18,'#fff',.03],[.65,'#000',0],[1,'#000',.24]])}<clipPath id="${gid('cwuClip')}"><rect x="54" y="1065" width="202" height="339" rx="27"/></clipPath><clipPath id="${gid('bufferClip')}"><rect x="414" y="1065" width="202" height="339" rx="27"/></clipPath>`;
+  const defs=`${gradient('background','cx=".5" cy=".35" r=".8"',[[0,'#111a1f'],[.6,'#080e12'],[1,'#05090c']],'radialGradient')}${gradient('tankMetal','x1="0" x2="1"',[[0,'#6c7a83'],[.035,'#e4eaed'],[.08,'#f8fafb'],[.14,'#7c8b94'],[.48,'#3e4c55'],[.85,'#8e9da5'],[.94,'#e4eaed'],[1,'#5a6972']])}${gradient('metal','x1="0" x2="1"',[[0,'#77858e'],[.16,'#e6ebee'],[.45,'#a7b3bb'],[.72,'#657680'],[1,'#c5cfd5']])}${gradient('pumpMetal','x1="0" y1="0" x2="1" y2="1"',[[0,'#f3f6f7'],[.45,'#a2b0b8'],[1,'#475962']])}${gradient('control','',[[0,'#253239'],[.75,'#10191f'],[1,'#060b0e']],'radialGradient')}${gradient('panel','x1="0" y1="0" x2="1" y2="1"',[[0,'#182126'],[1,'#080e12']])}${gradient('blade','x1="0" y1="0" x2="1" y2="1"',[[0,'#d0d8dd'],[.45,'#82929d'],[1,'#354954']])}${gradient('cwuFill','x1="0" y1="0" x2="0" y2="1"',[[0,cwu],[1,cwu]])}${gradient('bufferFill','x1="0" y1="0" x2="0" y2="1"',[[0,co[0]],[.5,co[1]],[1,co[2]]])}${gradient('coilHeat','x1="0" y1="1" x2="0" y2="0"',[[0,'#29bfea'],[.45,'#a544d4'],[1,'#f33756']])}${gradient('liquidGloss','x1="0" x2="1"',[[0,'#fff',.18],[.18,'#fff',.03],[.65,'#000',0],[1,'#000',.24]])}<clipPath id="${gid('cwuClip')}"><rect x="54" y="1065" width="202" height="339" rx="27"/></clipPath><clipPath id="${gid('bufferClip')}"><rect x="414" y="1065" width="202" height="339" rx="27"/></clipPath>`;
   return `<style>
    :host{display:block;box-sizing:border-box;min-width:0;max-width:100%}
    .hf-wrap{width:100%;max-width:var(--hf-width,640px);margin:0 auto;min-width:0}
@@ -164,10 +177,14 @@ class HaierHeatingCard extends HTMLElement {
   <g transform="translate(497 440)"${entity(E.compressor)}><circle r="66" fill="${url('metal')}" stroke="#e4ebef" stroke-width="3"/><circle r="56" fill="none" stroke="#f5f8fa" stroke-opacity=".5" stroke-width="2"/><circle r="49" fill="#4a5963" stroke="#273c48" stroke-width="3"/><path d="M-18 -29H18V-6H-18Z" fill="none" stroke="#e4ecef" stroke-width="4"/><g>${running?motion('translate','0,-3;0,4;0,-3','.7s'):''}<rect x="-14" y="-22" width="28" height="9" fill="#dbe5ea"/><path d="M0 -13V24" stroke="#dbe5ea" stroke-width="4"/></g><circle cy="28" r="8" fill="none" stroke="#dbe5ea" stroke-width="4"/><circle r="73" fill="transparent"/></g>
   ${text(E.compressor,497,528,val(E.compressor,0),30)}${text(E.ambient,151,512,temp(E.ambient),32,'#f4f6f7','end')}${wind(195,506)}
   <g transform="translate(158 662)"${entity(E.fan)}><g>${spin(fan,'2s')}${[0,72,144,216,288].map(a=>`<path d="M-10 -13C-54 -34 -64 -98 -27 -104 C9 -110 39 -45 15 -13Z" fill="${url('blade')}" stroke="#c0cbd2" stroke-opacity=".6" stroke-width="1.5" transform="rotate(${a})"/>`).join('')}<circle r="29" fill="${url('metal')}" stroke="#d8e2e8" stroke-width="2"/><circle r="11" fill="#233843" stroke="#899da9" stroke-width="2"/></g><circle r="113" fill="transparent"/></g>
-  ${wind(85,802,'-1.1s')}${text(E.defrost,160,812,temp(E.defrost),31,'#f4f6f7','start')}${text(E.fan,151,915,val(E.fan,0),30)}${pipe(evap,cold,running)}
+  ${wind(85,802,'-1.1s')}${text(E.defrost,160,812,temp(E.defrost),31,'#f4f6f7','start')}${text(E.fan,151,915,val(E.fan,0),30)}${pipe(evap,cold,running,true)}
   ${control(E.heater,497,590,'heat',false,32,String(states[E.heater]?.state||'').trim().toLocaleUpperCase('pl-PL')==='WŁ')}${control(E.limit,497,681,'gauge',true,32,on(E.limit))}${control(E.cooling,497,772,'snow',true,32,on(E.cooling))}
-  <g><rect x="608" y="540" width="86" height="286" rx="25" fill="${url('metal')}" stroke="#c9d5dc" stroke-width="2"/><ellipse cx="651" cy="548" rx="42" ry="12" fill="#dce4e9" stroke="#7d919e" stroke-width="1"/><path d="M620 567V804M682 567V804" stroke="#f2f6f8" stroke-opacity=".3" stroke-width="2"/><ellipse cx="651" cy="816" rx="40" ry="9" fill="#7e919d" stroke="#c1d0d9" stroke-width="1"/></g>
-  ${pipe(condenser,hot,running,false,12)}${pipe('M694 627H960',hot,hp)}${pipe('M960 775H694',cold,hp)}${pump(E.electric,791,627,hot,29,hp)}
+  ${pipe(refrigerantHot,hot,running,false,12)}
+  ${pipe(refrigerantOutlet,hot,running,false,12)}
+  <g data-condenser-back="true" opacity=".6">${coilBack.map(d=>pipe(d,url('coilHeat'),hp,false,11)).join('')}</g>
+  <g data-condenser-body="true"><rect x="608" y="540" width="86" height="286" rx="25" fill="${url('metal')}" stroke="#c9d5dc" stroke-width="2"/><ellipse cx="651" cy="548" rx="42" ry="12" fill="#dce4e9" stroke="#7d919e" stroke-width="1"/><path d="M620 567V804M682 567V804" stroke="#f2f6f8" stroke-opacity=".3" stroke-width="2"/><ellipse cx="651" cy="816" rx="40" ry="9" fill="#7e919d" stroke="#c1d0d9" stroke-width="1"/></g>
+  <g data-condenser-front="true">${coilFront.map(d=>pipe(d,url('coilHeat'),hp,true,11)).join('')}</g>
+  ${pipe('M694 627H960',hot,hp)}${pipe('M960 775H694',cold,hp)}${pump(E.electric,791,627,hot,29,hp)}
   ${text(E.tho,752,506,temp(E.tho),30)}${text(E.supplyTarget,959,533,temp(E.supplyTarget),31,'#ff3554','end')}${text(E.supply,959,578,temp(E.supply),34,'#f4f6f7','end')}${text(E.delta,957,701,'Δ '+temp(E.delta),31,'#f4f6f7','end')}${text(E.return,957,817,temp(E.return),32,'#f4f6f7','end')}${text(E.thi,744,859,temp(E.thi),30)}
   <g transform="translate(494 875)"${entity(E.expansion)}><path d="M-39 -20L0 0L-39 20ZM39 -20L0 0L39 20Z" fill="${url('metal')}" stroke="#e1e9ed" stroke-width="2"/><rect x="-14" y="-39" width="28" height="20" rx="4" fill="${url('metal')}" stroke="#e1e9ed" stroke-width="2"/><path d="M0 -19V-1" stroke="#e0e9ef" stroke-width="4"/><ellipse cy="-39" rx="14" ry="4" fill="#e1e9ed"/><rect x="-45" y="-45" width="90" height="75" fill="transparent"/></g>${text(E.expansion,494,925,val(E.expansion,1),34)}
   ${pipe('M270 1145H345',hot,circ,false,11)}${pump(E.circulation,324,1145,hot,24,circ)}<path d="M351 1137V1153M358 1137V1153" stroke="#b6c4cc" stroke-width="2" stroke-linecap="round"/>

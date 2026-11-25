@@ -30,8 +30,8 @@ test('original panel geometry and labels with missing optional sensors',()=>{
 test('five rays and continuous condenser; evaporator follows leftward start',()=>{
  const s=make().shadowRoot.innerHTML;
  const sun=s.match(/data-sun-rays="5" d="([^"]+)"/)[1];assert.equal((sun.match(/M/g)||[]).length,5);
- const red=s.match(/<path d="(M563 440[^"]+)"[^>]*class="hf-flow"/)[1];assert.equal((red.match(/M/g)||[]).length,1);assert.match(red,/V540 C651 553/);assert.match(red,/651 809 V851 Q651 875 627 875 H535$/);
- assert.match(s,/<path d="M431 440H385[^\"]+"[^>]*class="hf-flow"/);
+ const red=s.match(/<path d="(M563 440[^"]+)"[^>]*class="hf-flow"/)[1];assert.equal((red.match(/M/g)||[]).length,1);assert.match(red,/V540$/);assert.match(s,/M651 826 V851 Q651 875 627 875 H535/);assert.match(s,/data-condenser-front="true"/);assert.match(s,/data-condenser-back="true"/);
+ assert.match(s,/<path d="M431 440H385[^\"]+"[^>]*class="hf-flow hf-reverse"/);
 });
 test('public source has no private entity IDs or pasted chat markup',()=>assert.doesNotMatch(src,/franciszkow|sensor\.haier_|fai-ChatInputEntity/i));
 test('CWU visually full and two daily readings with separators',()=>{
