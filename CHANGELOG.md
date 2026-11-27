@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.5.17
+- Removed the duplicate `haier-heating-card-main/` folder; rebuilt `dist/`.
+
 ## 0.5.16
 - Evenly spaced the three daily readings (Pobrano, Wytworzono, COP detail) so they fit inside the header band.
 

@@ -1,4 +1,4 @@
-// Haier Heating Card v0.5.16
+// Haier Heating Card v0.5.17
 const GROUPS = {
  'Pompa ciepła': 'electric thermal cop status program controlPc mode control energyDaily heatDaily copLabel copDetail fan compressor suction discharge ambient defrost expansion tho thi supply supplyTarget return delta limit cooling heater',
  'Dom i pogoda': 'north south groundRoom upperRoom groundThermostat upperThermostat',

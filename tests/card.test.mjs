@@ -64,14 +64,17 @@ test('one routed water circuit and three phase-aligned visible turns',()=>{
  const s=make().shadowRoot.innerHTML;
  const layers=[...s.matchAll(/<g data-condenser-(back|front)="true"[^>]*>(.*?)<\/g>/g)];
  assert.equal(layers.length,2);
- const flows=layers.map(([, , paths])=>paths.match(/<path d="([^"]+)"[^>]*class="hf-flow hf-reverse"/)[1]);
- assert.equal(flows[0],flows[1]);
- assert.equal((flows[0].match(/M/g)||[]).length,1);
- assert.match(flows[0],/^M960 609 H722.*700 757 H960$/);
- const mask=s.match(/<mask id="[^"]+-coilFrontMask"[^>]*>(.*?)<\/mask>/)[1];
- const curves=[...mask.matchAll(/M596 (\d+) C596 (\d+) 655 (\d+) 700 (\d+)/g)].map(m=>m.slice(1).map(Number));
- assert.deepEqual(curves,[[613,626,645,645],[669,682,701,701],[725,738,757,757]]);
- for(const [y,c1,c2,end] of curves) assert.ok(flows[0].includes(`C596 ${c1} 655 ${c2} 700 ${end}`));
+ const full=layers[0][2].match(/<path d="([^"]+)"[^>]*class="hf-flow hf-reverse"/)[1];
+ assert.match(full,/^M960 609 H700 .*700 757 H960$/);
+ const front=[...layers[1][2].matchAll(/<path d="([^"]+)"[^>]*class="hf-flow hf-reverse"[^>]*--hf-phase:([\d.]+)px/g)];
+ assert.equal(front.length,3);
+ assert.deepEqual(front.map(m=>Number(m[2])),[32.62,3.32,12.03]);
+ for(const [i,y] of [641,690,739].entries()){
+  const profile=`C595 ${y+7} 612 ${y+9} 629 ${y+12} C653 ${y+16} 674 ${y+18} 700 ${y+18}`;
+  assert.equal(front[i][1],`M595 ${y} ${profile}${i===2?' H960':''}`);
+  assert.ok(full.includes(profile));
+ }
+ assert.doesNotMatch(layers[1][0],/clip-path=|mask=/);
  assert.ok(s.indexOf('data-condenser-back')<s.indexOf('data-condenser-body'));
  assert.ok(s.indexOf('data-condenser-body')<s.indexOf('data-condenser-front'));
 });
