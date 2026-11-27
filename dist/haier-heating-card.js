@@ -1,4 +1,4 @@
-// Haier Heating Card v0.5.15
+// Haier Heating Card v0.5.16
 const GROUPS = {
  'Pompa ciepła': 'electric thermal cop status program controlPc mode control energyDaily heatDaily copLabel copDetail fan compressor suction discharge ambient defrost expansion tho thi supply supplyTarget return delta limit cooling heater',
  'Dom i pogoda': 'north south groundRoom upperRoom groundThermostat upperThermostat',
@@ -170,9 +170,9 @@ class HaierHeatingCard extends HTMLElement {
   <g transform="translate(648 101)" fill="none" stroke="#dce6eb" stroke-width="5" stroke-linejoin="round"><path d="M-28 5L0 -23L28 5V54H-28Z"/><path d="M-8 54V23H8V54"/></g>
   ${text(E.groundRoom,778,82,temp(E.groundRoom),32)}${text(E.groundThermostat,924,82,target(E.groundThermostat),31,'#ff3655')}${text(E.upperRoom,778,145,temp(E.upperRoom),32)}${text(E.upperThermostat,924,145,target(E.upperThermostat),31,'#ff3655')}
   ${text(E.status,104,259,state(E.status),48,'#f4f7f8','middle',700,122)}<path d="M176 232V284" stroke="#64757e" stroke-width="1.5"/>${text(E.program,278,253,state(E.program),29,'#f4f7f8','middle',700,160)}${text(E.controlPc,278,282,state(E.controlPc),15,'#aebec7','middle',600,160)}${text(E.mode,951,243,state(E.mode),30,'#f4f7f8','end',700,280)}${text(E.control,951,280,state(E.control),23,'#c7d2d9','end',500,300)}<path d="M392 232V284M747 232V284" stroke="#64757e" stroke-width="1.5"/>
-  ${text(E.energyDaily,570,247,'Pobrano: '+val(E.energyDaily,2),22,'#f4f7f8','middle',600,340)}
-  ${text(E.heatDaily,570,281,'Wytworzono: '+val(E.heatDaily,2),22,'#f4f7f8','middle',600,340)}
-  ${E.copDetail&&states[E.copDetail]&&!['unknown','unavailable',''].includes(states[E.copDetail].state)?text(E.copDetail,570,312,states[E.copDetail].state,18,'#9ad1a8','middle',500,340):''}
+  ${text(E.energyDaily,570,231,'Pobrano: '+val(E.energyDaily,2),22,'#f4f7f8','middle',600,340)}
+  ${text(E.heatDaily,570,259,'Wytworzono: '+val(E.heatDaily,2),22,'#f4f7f8','middle',600,340)}
+  ${E.copDetail&&states[E.copDetail]&&!['unknown','unavailable',''].includes(states[E.copDetail].state)?text(E.copDetail,570,287,states[E.copDetail].state,18,'#9ad1a8','middle',500,340):''}
   ${text(E.suction,373,365,temp(E.suction),32)}${text(E.discharge,633,365,temp(E.discharge),32)}
   <g transform="translate(497 440)"${entity(E.compressor)}><circle r="66" fill="${url('metal')}" stroke="#e4ebef" stroke-width="3"/><circle r="56" fill="none" stroke="#f5f8fa" stroke-opacity=".5" stroke-width="2"/><circle r="49" fill="#4a5963" stroke="#273c48" stroke-width="3"/><path d="M-18 -29H18V-6H-18Z" fill="none" stroke="#e4ecef" stroke-width="4"/><g>${running?motion('translate','0,-3;0,4;0,-3','.7s'):''}<rect x="-14" y="-22" width="28" height="9" fill="#dbe5ea"/><path d="M0 -13V24" stroke="#dbe5ea" stroke-width="4"/></g><circle cy="28" r="8" fill="none" stroke="#dbe5ea" stroke-width="4"/><circle r="73" fill="transparent"/></g>
   ${text(E.compressor,497,528,val(E.compressor,0),30)}${text(E.ambient,151,512,temp(E.ambient),32,'#f4f6f7','end')}${wind(195,506)}

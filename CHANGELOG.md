@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.5.16
+- Evenly spaced the three daily readings (Pobrano, Wytworzono, COP detail) so they fit inside the header band.
+
 ## 0.5.15
 - Added optional `copLabel` (prefix before the COP value, e.g. COP CO / COP CWU / EER) and `copDetail` (small line under the daily readings).
 
