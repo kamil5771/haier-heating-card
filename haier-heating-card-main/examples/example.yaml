@@ -1,8 +1,0 @@
-type: custom:haier-heating-card
-fit_height: true
-missing_entity_mode: hide
-entities:
-  electric: sensor.my_heat_pump_power
-  fan: sensor.my_heat_pump_fan_speed
-  compressor: sensor.my_heat_pump_compressor_frequency
-  cwu: sensor.my_hot_water_temperature
