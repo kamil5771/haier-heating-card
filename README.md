@@ -1,4 +1,4 @@
-# Haier Heating Card v0.5.12
+# Haier Heating Card v0.5.15
 
 Animowany schemat instalacji grzewczej dla dashboardu Home Assistant. Karta nie wymaga `custom:button-card` i nie zawiera domyślnych identyfikatorów encji.
 
@@ -40,11 +40,22 @@ entities:
   heatDaily: sensor.haier_cieplo_dobowo
 ```
 
+Opcjonalnie `copLabel` (tekst przed wartością COP, np. `COP CO`, `COP CWU`, `EER`) i `copDetail` (mała linia pod odczytami dobowymi).
+
 W górnym panelu wyświetlane są jako **Pobrano** i **Wytworzono**, z jednostką encji. Przytrzymanie odczytu lub ikony przez około 500 ms otwiera More Info.
 
 ## Skraplacz
 
 Owijka wodna jest oddzielona od obiegu czynnika chłodniczego. Jej tylne fragmenty są zasłonięte przez metalowy korpus, a kolor przechodzi od niebieskiego na dole do czerwonego na górze.
+
+## v0.5.15
+- Opcjonalne `copLabel` i `copDetail`.
+
+## v0.5.14
+- Shortened the right-hand coil bends while preserving the three front profiles, the straight return and the pipe positions.
+
+## v0.5.13
+- Used the same shallow profile for all three coil turns with a straight return outlet, and removed clipping from the foreground strokes.
 
 ## v0.5.12
 - Used three identical coil passes and replaced rectangular clipping with a coil-shaped mask.

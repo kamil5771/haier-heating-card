@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.15
+- Added optional `copLabel` (prefix before the COP value, e.g. COP CO / COP CWU / EER) and `copDetail` (small line under the daily readings).
+
+## 0.5.14
+- Shortened the right-hand coil bends while preserving the three front profiles, the straight return and the pipe positions.
+
+## 0.5.13
+- Used the same shallow profile for all three coil turns with a straight return outlet, and removed clipping from the foreground strokes.
+
 ## 0.5.12
 - Used three identical coil passes and replaced rectangular clipping with a coil-shaped mask.
 
